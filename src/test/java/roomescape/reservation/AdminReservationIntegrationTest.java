@@ -76,7 +76,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
         memberRepository.save(new Member("몰리", Role.USER, "login@naver.com", "hihi"));
 
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -93,7 +93,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
                 .body("id", equalTo(1))
                 .body("member.name", equalTo("몰리"))
                 .body("theme.name", equalTo("테마이름"))
-                .body("date", equalTo("2024-11-30"))
+                .body("date", equalTo("2026-11-30"))
                 .body("time.startAt", equalTo("20:00"));
     }
 
@@ -144,7 +144,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 회원 식별자 자연수 아님")
     void createReservationByAdmin_WhenMemberIdIsInvalidType(Long memberId) {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", memberId);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -165,7 +165,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 회원 식별자 없음")
     void createReservationByAdmin_WhenMemberIdIsNull() {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", null);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -187,7 +187,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 시간 식별자 자연수 아님")
     void createReservationByAdmin_WhenTimeIsInvalidType(Long timeId) {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", timeId);
         params.put("themeId", 1);
@@ -208,7 +208,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 시간 식별자 없음")
     void createReservationByAdmin_WhenTimeIsNull() {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", null);
         params.put("themeId", 1);
@@ -230,7 +230,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 테마 식별자 자연수 아님")
     void createReservationByAdmin_WhenThemeIdIsInvalidType(Long themeId) {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", 1);
         params.put("themeId", themeId);
@@ -251,7 +251,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("관리자 권한 예약 생성 실패: 테마 식별자 없음")
     void createReservationByAdmin_WhenThemeIdIsNull() {
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", 1);
         params.put("themeId", null);
@@ -275,7 +275,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
         memberRepository.save(new Member("몰리", Role.USER, "login@naver.com", "hihi"));
 
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -299,7 +299,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
         memberRepository.save(new Member("몰리", Role.USER, "login@naver.com", "hihi"));
 
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 1);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -323,7 +323,7 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
         reservationTimeRepository.save(new ReservationTime(LocalTime.of(20, 0)));
 
         Map<String, Object> params = new HashMap<>();
-        params.put("date", "2024-11-30");
+        params.put("date", "2026-11-30");
         params.put("memberId", 2);
         params.put("timeId", 1);
         params.put("themeId", 1);
@@ -349,10 +349,10 @@ class AdminReservationIntegrationTest extends RestDocsConfiguration {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
 
         Reservation reservation1 = reservationRepository.save(
-                new Reservation(memberRepository.getById(1L), LocalDate.parse("2024-11-23"),
+                new Reservation(memberRepository.getById(1L), LocalDate.parse("2026-11-23"),
                         reservationTimeRepository.getById(1L), themeRepository.getById(1L)));
         Reservation reservation2 = reservationRepository.save(
-                new Reservation(memberRepository.getById(1L), LocalDate.parse("2024-12-23"),
+                new Reservation(memberRepository.getById(1L), LocalDate.parse("2026-12-23"),
                         reservationTimeRepository.getById(1L), themeRepository.getById(1L)));
 
         // when

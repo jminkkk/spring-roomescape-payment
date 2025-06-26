@@ -72,7 +72,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 대기 성공")
     @Test
     void createReservationWaiting() {
-        LocalDate date = LocalDate.parse("2024-11-30");
+        LocalDate date = LocalDate.parse("2026-11-30");
         Member member = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
@@ -96,7 +96,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 대기 실패: 예약 없음")
     @Test
     void createReservationWaiting_WhenReservationNotExists() {
-        LocalDate date = LocalDate.parse("2024-11-30");
+        LocalDate date = LocalDate.parse("2026-11-30");
         Member member = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
         reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
@@ -111,7 +111,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
                 .then().log().all()
 
                 .statusCode(404)
-                .body("detail", equalTo("2024-11-30의 time: 1, theme: 1의 예약이 존재하지 않습니다."));
+                .body("detail", equalTo("2026-11-30의 time: 1, theme: 1의 예약이 존재하지 않습니다."));
     }
 
     @DisplayName("방탈출 예약 대기 실패: 중복 대기")
@@ -121,7 +121,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         waitingRepository.save(new Waiting(reservation, member));
         CreateWaitingRequest createWaitingRequest = new CreateWaitingRequest(reservation.getDate(), 1L, 1L);
@@ -145,7 +145,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
         Reservation otherReservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2025-01-30"), reservationTime, theme));
 
@@ -174,7 +174,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         waitingRepository.save(new Waiting(reservation, member));
 
@@ -193,7 +193,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         Member member = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-30"), reservationTime, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -213,7 +213,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         waitingRepository.save(new Waiting(reservation, member));
 
@@ -234,7 +234,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(admin, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(admin, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         waitingRepository.save(new Waiting(reservation, admin));
 
@@ -254,7 +254,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(admin, LocalDate.parse("2024-11-30"), reservationTime, theme));
+                new Reservation(admin, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)

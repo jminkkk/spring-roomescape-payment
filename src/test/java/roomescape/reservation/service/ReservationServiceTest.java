@@ -82,7 +82,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2024, 10, 10), reservationTime.getId(), theme.getId(),
+                LocalDate.now().plusDays(1), reservationTime.getId(), theme.getId(),
                 "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
@@ -104,7 +104,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2024, 10, 10), reservationTime.getId(), theme.getId(), "failPayment", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "failPayment", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // stub
@@ -125,7 +125,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2024, 10, 10), 1L, theme.getId(), "paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), 1L, theme.getId(), "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
@@ -142,7 +142,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2024, 10, 10), reservationTime.getId(), 1L, "paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), 1L, "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
@@ -155,7 +155,7 @@ class ReservationServiceTest {
     @DisplayName("회원 예약 생성 실패: 중복 예약")
     void createReservation_ifExistSameDateAndTime_throwException() {
         // given
-        LocalDate sameDate = LocalDate.parse("2024-10-10");
+        LocalDate sameDate = LocalDate.parse("2026-10-10");
         ReservationTime sameReservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme sameTheme = themeRepository.save(ThemeFixture.getOne());
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
@@ -168,7 +168,7 @@ class ReservationServiceTest {
         // when & then
         assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 2024-10-10의 테마 이름 테마에는 10:00 시의 예약이 존재하여 예약을 생성할 수 없습니다.");
+                .hasMessage("이미 2026-10-10의 테마 이름 테마에는 10:00 시의 예약이 존재하여 예약을 생성할 수 없습니다.");
     }
 
     @Test
@@ -194,7 +194,7 @@ class ReservationServiceTest {
     @DisplayName("전체 예약 목록 조회 성공")
     void getReservations() {
         // give
-        LocalDate date = LocalDate.parse("2024-04-10");
+        LocalDate date = LocalDate.parse("2026-04-10");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -215,7 +215,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-04-10"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         // when & then
         assertThat(reservationService.getReservation(reservation.getId()))
@@ -241,9 +241,9 @@ class ReservationServiceTest {
 
         Member member = members.get(0);
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2025-04-10"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
         Reservation reservationByOtherMember = reservationRepository.save(
-                new Reservation(members.get(1), LocalDate.parse("2025-04-10"), reservationTime, theme));
+                new Reservation(members.get(1), LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
         ReservationWithPayment reservationWithPayment = new ReservationWithPayment(reservation, null);
@@ -256,7 +256,7 @@ class ReservationServiceTest {
     @Test
     @DisplayName("가능한 예약 시간 조회 성공")
     void getAvailableTimes() {
-        LocalDate date = LocalDate.parse("2024-10-23");
+        LocalDate date = LocalDate.parse("2026-10-23");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime1 = reservationTimeRepository.save(
                 new ReservationTime(LocalTime.parse("10:00")));
@@ -283,7 +283,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
 
-        LocalDate dateFrom = LocalDate.parse("2025-04-10");
+        LocalDate dateFrom = LocalDate.parse("2026-04-10");
         LocalDate dateTo = LocalDate.parse("2026-04-10");
         Reservation reservation1 = reservationRepository.save(
                 new Reservation(members.get(0), dateFrom, reservationTime, theme));
@@ -307,7 +307,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-04-10"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         // when
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
@@ -326,7 +326,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-04-10"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         // when
         AuthInfo authInfo = new AuthInfo(admin.getId(), admin.getName(), admin.getRole());
@@ -345,7 +345,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
-                new Reservation(reservationMember, LocalDate.parse("2024-04-10"), reservationTime, theme));
+                new Reservation(reservationMember, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         Waiting waiting = waitingRepository.save(new Waiting(reservation, waitingMember));
 
@@ -374,7 +374,7 @@ class ReservationServiceTest {
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-04-10"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         // when
         AuthInfo authInfo = new AuthInfo(otherMember.getId(), otherMember.getName(), otherMember.getRole());

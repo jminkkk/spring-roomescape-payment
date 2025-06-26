@@ -104,7 +104,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 1L, 1L, "paymentKey", "orderId", 100_000L);
 
         // when & then
@@ -207,7 +207,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 시간 식별자 형식")
     void createReservation_WhenTimeIsInvalidType(Long timeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 timeId, 1L, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -225,7 +225,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 시간 null")
     void createReservation_WhenTimeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 null, 1L, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -244,7 +244,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeNotExist() {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 1L, 1L, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -263,7 +263,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 테마 식별자 형식")
     void createReservation_WhenThemeIdIsInvalidType(Long themeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 1L, themeId, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -281,7 +281,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 테마 null")
     void createReservation_WhenThemeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 1L, null, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -301,7 +301,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2024-11-30"),
+                LocalDate.parse("2025-11-30"),
                 1L, 1L, "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -348,7 +348,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
 
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-23"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2025-11-23"), reservationTime, theme));
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -357,7 +357,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
 
                 .statusCode(200)
                 .body("theme", equalTo(reservation.getTheme().getName()))
-                .body("date", equalTo("2024-11-23"))
+                .body("date", equalTo("2025-11-23"))
                 .body("time", equalTo("20:00"));
     }
 
@@ -383,13 +383,13 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 new ReservationTime(LocalTime.parse("10:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
 
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-23"), reservationTime1, theme));
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-12-23"), reservationTime1, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-11-23"), reservationTime1, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-12-23"), reservationTime1, theme));
 
         List<FindAvailableTimesResponse> findAvailableTimesResponses = RestAssured.given(this.spec)
                 .log().all()
                 .contentType(ContentType.JSON)
-                .when().get("/reservations/times?date=2024-11-23&themeId=1")
+                .when().get("/reservations/times?date=2025-11-23&themeId=1")
                 .then().log().all()
                 .extract().jsonPath()
                 .getList(".", FindAvailableTimesResponse.class);
@@ -411,16 +411,16 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation1 = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-11-23"), reservationTime1, theme));
+                new Reservation(member, LocalDate.parse("2025-11-23"), reservationTime1, theme));
         Reservation reservation2 = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2024-12-23"), reservationTime1, theme));
+                new Reservation(member, LocalDate.parse("2025-12-23"), reservationTime1, theme));
         Reservation reservation3 = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2025-01-23"), reservationTime1, theme));
+                new Reservation(member, LocalDate.parse("2026-01-23"), reservationTime1, theme));
 
         List<FindReservationResponse> findReservationResponses = RestAssured.given(this.spec)
                 .log().all()
                 .contentType(ContentType.JSON)
-                .when().get("/reservations/search?memberId=1&themeId=1&dateFrom=2024-12-23&dateTo=2025-01-23")
+                .when().get("/reservations/search?memberId=1&themeId=1&dateFrom=2025-12-23&dateTo=2026-01-23")
                 .then().log().all()
 
                 .statusCode(200)
@@ -440,7 +440,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         Theme theme = themeRepository.save(ThemeFixture.getOne());
         Member reservationMember = memberRepository.save(MemberFixture.getOne("reservationMember@naver.com"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(reservationMember, LocalDate.parse("2024-11-23"), reservationTime, theme));
+                new Reservation(reservationMember, LocalDate.parse("2025-11-23"), reservationTime, theme));
 
         String token = getTokenByLogin(new Member("파랑", Role.ADMIN, "admin@naver.com", "hihi"));
 
@@ -470,7 +470,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         Member reservationMember = memberRepository.save(MemberFixture.getOne("reservationMember@naver.com"));
         Member waitingMember = memberRepository.save(MemberFixture.getOne("mmmember@naver.com"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(reservationMember, LocalDate.parse("2024-11-23"), reservationTime, theme));
+                new Reservation(reservationMember, LocalDate.parse("2025-11-23"), reservationTime, theme));
         waitingRepository.save(new Waiting(reservation, waitingMember));
 
         String token = getTokenByLogin(new Member("파랑", Role.ADMIN, "admin@naver.com", "hihi"));

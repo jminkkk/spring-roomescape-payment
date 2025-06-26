@@ -35,7 +35,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("저장된 모든 예약을 조회한다.")
     void findAll() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -51,7 +51,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("동일한 회원인 모든 예약을 조회한다.")
     void findAllByMemberId() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
 
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
@@ -70,7 +70,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("동일한 회원인 모든 예약 및 결제 정보를 조회한다.")
     void findReservationWithPaymentsByMemberId() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
 
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
@@ -94,7 +94,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("동일한 날짜, 테마의 모든 예약을 조회한다.")
     void findAllByDateAndThemeId() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
 
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
@@ -116,7 +116,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("동일한 회원, 테마, 해당하는 기간 내의 모든 예약을 조회한다.")
     void findAllByThemeIdAndMemberIdAndDateBetween() {
-        LocalDate startDate = LocalDate.parse("2024-11-11");
+        LocalDate startDate = LocalDate.parse("2025-11-11");
 
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
@@ -140,7 +140,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("날짜, 시간, 테마가 동일한 예약을 조회한다.")
     void getByDateAndReservationTimeIdAndThemeId() {
-        LocalDate startDate = LocalDate.parse("2024-11-11");
+        LocalDate startDate = LocalDate.parse("2025-11-11");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -158,7 +158,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("날짜, 시간, 테마가 동일한 예약이 없는 경우, 예외를 반환한다.")
     void getByDateAndReservationTimeIdAndThemeId_WhenNotExist() {
-        LocalDate startDate = LocalDate.parse("2024-11-11");
+        LocalDate startDate = LocalDate.parse("2025-11-11");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -167,13 +167,13 @@ class ReservationRepositoryTest {
                         reservationTime.getId(),
                         theme.getId()))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("2024-11-11의 time: 1, theme: 1의 예약이 존재하지 않습니다.");
+                .hasMessage("2025-11-11의 time: 1, theme: 1의 예약이 존재하지 않습니다.");
     }
 
     @Test
     @DisplayName("동일한 날짜와 예약 시간, 테마의 예약이 존재할 경우, 참을 반환한다.")
     void existsByDateAndReservationTimeIdAndThemeId() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -190,7 +190,7 @@ class ReservationRepositoryTest {
     @Test
     @DisplayName("동일한 날짜와 예약 시간, 테마의 예약이 존재하지 않을 경우, 거짓을 반환한다.")
     void existsByDateAndReservationTimeIdAndThemeId_WhenNotExists() {
-        LocalDate date = LocalDate.parse("2024-11-11");
+        LocalDate date = LocalDate.parse("2025-11-11");
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
@@ -210,7 +210,7 @@ class ReservationRepositoryTest {
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-11"), reservationTime, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-11-11"), reservationTime, theme));
 
         assertThat(reservationRepository.existsByReservationTimeId(reservationTime.getId())).isTrue();
     }
@@ -221,7 +221,7 @@ class ReservationRepositoryTest {
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-11"), reservationTime, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-11-11"), reservationTime, theme));
 
         assertThat(reservationRepository.existsByReservationTimeId(reservationTime.getId() + 1)).isFalse();
     }
@@ -232,7 +232,7 @@ class ReservationRepositoryTest {
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-11"), reservationTime, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-11-11"), reservationTime, theme));
 
         assertThat(reservationRepository.existsByThemeId(theme.getId())).isTrue();
     }
@@ -243,7 +243,7 @@ class ReservationRepositoryTest {
         Member member = memberRepository.save(MemberFixture.getOne());
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
-        reservationRepository.save(new Reservation(member, LocalDate.parse("2024-11-11"), reservationTime, theme));
+        reservationRepository.save(new Reservation(member, LocalDate.parse("2025-11-11"), reservationTime, theme));
 
         assertThat(reservationRepository.existsByThemeId(theme.getId() + 1)).isFalse();
     }
