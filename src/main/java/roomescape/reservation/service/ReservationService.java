@@ -3,14 +3,16 @@ package roomescape.reservation.service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.payment.dto.request.ConfirmPaymentRequest;
-import roomescape.payment.model.Payment;
+import roomescape.payment.client.toss.dto.request.ConfirmPaymentRequest;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.request.CreateReservationByAdminRequest;
@@ -60,11 +62,12 @@ public class ReservationService {
 
     public CreateReservationResponse createMyReservation(final AuthInfo authInfo,
                                                          final CreateMyReservationRequest createMyReservationRequest) {
-        CreateReservationRequest createReservationRequest = CreateReservationRequest.of(authInfo.getMemberId(),
-                createMyReservationRequest);
+        CreateReservationRequest createReservationRequest = CreateReservationRequest.of(authInfo.getMemberId(), createMyReservationRequest);
         Reservation reservation = reservationRepository.save(convertToReservation(createReservationRequest));
-        Payment payment = paymentService.createPayment(ConfirmPaymentRequest.from(createMyReservationRequest), reservation);
-        return CreateReservationResponse.from(reservation, payment);
+        System.out.println("Reservation " + Thread.currentThread().getId());
+        System.out.println("Payment " + TransactionSynchronizationManager.getCurrentTransactionName());
+        paymentService.createPayment(ConfirmPaymentRequest.from(createMyReservationRequest), reservation);
+        return CreateReservationResponse.from(reservation);
     }
 
     public CreateReservationResponse createReservationByAdmin(final CreateReservationByAdminRequest createReservationByAdminRequest) {

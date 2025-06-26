@@ -3,7 +3,7 @@ package roomescape.payment.client.toss;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import roomescape.payment.client.PaymentClient;
-import roomescape.payment.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.toss.dto.request.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
 
 @Component
@@ -24,4 +24,13 @@ public class TossPaymentClient implements PaymentClient {
                 .toEntity(PaymentInfoFromClient.class)
                 .getBody();
     }
+
+//    @Override
+//    public PaymentInfoFromClient cancel(String paymentKey) {
+//        return restClient.post()
+//                .uri(paymentKey + "/cancel")
+//                .retrieve()
+//                .toEntity(PaymentInfoFromClient.class)
+//                .getBody();
+//    }
 }
