@@ -3,7 +3,7 @@ package roomescape.payment.client.toss;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import roomescape.payment.client.PaymentClient;
-import roomescape.payment.client.toss.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
 
 @Component

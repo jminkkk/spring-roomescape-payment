@@ -19,7 +19,7 @@ import roomescape.common.exception.ClientException;
 import roomescape.payment.client.PaymentClient;
 import roomescape.payment.client.PaymentProperties;
 import roomescape.payment.client.PaymentRestClientConfiguration;
-import roomescape.payment.client.toss.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.ConfirmPaymentRequest;
 
 @RestClientTest({PaymentRestClientConfiguration.class, PaymentProperties.class})
 @MockBean(JpaMetamodelMappingContext.class)
