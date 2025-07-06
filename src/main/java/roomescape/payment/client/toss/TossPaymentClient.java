@@ -7,7 +7,7 @@ import roomescape.payment.client.dto.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
 
 @Component
-public class TossPaymentClient implements PaymentClient {
+public class TossPaymentClient extends PaymentClient {
 
     private final RestClient restClient;
 
@@ -16,7 +16,7 @@ public class TossPaymentClient implements PaymentClient {
     }
 
     @Override
-    public PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest) {
+    public PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey) {
         return restClient.post()
                 .uri("/confirm")
                 .body(confirmPaymentRequest)

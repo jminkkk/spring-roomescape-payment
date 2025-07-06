@@ -3,7 +3,7 @@ package roomescape.payment.client;
 import roomescape.payment.client.dto.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
 
-public interface PaymentClient {
+public abstract class PaymentClient {
 
-    PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest);
+    public abstract PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey);
 }
