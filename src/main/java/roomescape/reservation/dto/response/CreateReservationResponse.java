@@ -10,7 +10,7 @@ public record CreateReservationResponse(Long id,
                                         CreateTimeOfReservationsResponse time,
                                         CreateThemeOfReservationResponse theme,
                                         String paymentKey,
-                                        Long amountId) {
+                                        Long amount) {
     public static CreateReservationResponse from(final Reservation reservation) {
         return new CreateReservationResponse(
                 reservation.getId(),
