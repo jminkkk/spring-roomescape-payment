@@ -2,6 +2,9 @@ package roomescape.payment.client.toss;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.net.URI;
+
+import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.ResponseErrorHandler;
 import roomescape.common.exception.ClientException;
@@ -15,7 +18,7 @@ public class TossPaymentErrorHandler implements ResponseErrorHandler {
     }
 
     @Override
-    public void handleError(final ClientHttpResponse response) throws IOException {
+    public void handleError(final URI url, final HttpMethod method, final ClientHttpResponse response) throws IOException {
         TossClientErrorResponse tossClientErrorResponse = objectMapper.readValue(response.getBody(),
                 TossClientErrorResponse.class);
 
