@@ -18,6 +18,9 @@ public record CreateMyReservationRequest(
         @NotNull(message = "예약 등록 시 테마는 필수입니다.")
         Long themeId,
 
+        @NotNull(message = "결제 제공자를 입력해주세요.")
+        String providerName,
+
         @NotNull(message = "결제 키를 입력해주세요.")
         String paymentKey,
 

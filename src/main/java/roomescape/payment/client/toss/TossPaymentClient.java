@@ -3,7 +3,9 @@ package roomescape.payment.client.toss;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import roomescape.payment.client.PaymentClient;
+import roomescape.payment.client.PaymentClientType;
 import roomescape.payment.client.dto.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
 
@@ -18,11 +20,12 @@ public class TossPaymentClient extends PaymentClient {
     }
 
     @Override
-    public String getProviderName() {
-        return "Toss";
+    public PaymentClientType getPaymentProvider() {
+        return PaymentClientType.TOSS;
     }
 
     @Override
+    @CircuitBreaker(name =  "toss-payment", fallbackMethod = "fallbackConfirm")
     public PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey) {
         return restClient.post()
                 .uri("/confirm")
