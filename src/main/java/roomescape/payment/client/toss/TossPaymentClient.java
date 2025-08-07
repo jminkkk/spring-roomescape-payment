@@ -25,7 +25,7 @@ public class TossPaymentClient extends PaymentClient {
     }
 
     @Override
-    @CircuitBreaker(name =  "toss-payment", fallbackMethod = "fallbackConfirm")
+    @CircuitBreaker(name = "toss-payment", fallbackMethod = "fallbackConfirm")
     public PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey) {
         return restClient.post()
                 .uri("/confirm")

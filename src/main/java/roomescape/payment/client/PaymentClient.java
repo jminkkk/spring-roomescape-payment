@@ -15,14 +15,13 @@ public abstract class PaymentClient {
 
     public abstract String getProviderName();
 
-    @CircuitBreaker(recover = "fallbackConfirm")
     public abstract PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey);
 
     public PaymentInfoFromClient fallbackConfirm(Exception ex) {
-        String displayName = getProviderName();
+        PaymentClientType paymentClientType = getPaymentProvider();
 
-        logger.warning("Payment provider " + displayName + "unavailable, error: " + ex.getMessage());
+        logger.warning("Payment provider " + paymentClientType + " unavailable, error: " + ex.getMessage());
 
-        throw new ClientException(displayName + " 결제 서비스에 일시적 장애가 발생했습니다. 다른 결제 수단을 선택해주세요.");
+        throw new ClientException(paymentClientType + " 결제 서비스에 일시적 장애가 발생했습니다. 다른 결제 수단을 선택해주세요.");
     }
 }
