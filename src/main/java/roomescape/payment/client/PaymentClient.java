@@ -2,8 +2,6 @@ package roomescape.payment.client;
 
 import java.util.logging.Logger;
 
-import org.springframework.retry.annotation.CircuitBreaker;
-
 import roomescape.common.exception.ClientException;
 import roomescape.payment.client.dto.ConfirmPaymentRequest;
 import roomescape.payment.model.PaymentInfoFromClient;
@@ -13,7 +11,7 @@ public abstract class PaymentClient {
     private final Logger logger = Logger.getLogger("Logger");
     protected static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
 
-    public abstract String getProviderName();
+    public abstract PaymentClientType getPaymentProvider();
 
     public abstract PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey);
 
