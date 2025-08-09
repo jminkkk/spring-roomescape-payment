@@ -32,3 +32,33 @@ management:
     circuitbreakers:
       enabled: true
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 60
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - org.springframework.web.client.ResourceAccessException
+          - roomescape.payment.client.exception.PaymentInfrastructureException
+          - roomescape.payment.client.exception.PaymentProviderException
+        ignoreExceptions:
+          - roomescape.payment.client.exception.PaymentBusinessException
+          - roomescape.payment.client.exception.PaymentClientException
+          - roomescape.payment.client.exception.PaymentPolicyException
+          - roomescape.payment.client.exception.PaymentStateException
+
+    instances:
+      default-pg:
+        baseConfig: default
+      toss-payment:
+        baseConfig: default
