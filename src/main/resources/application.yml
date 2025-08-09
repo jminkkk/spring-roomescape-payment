@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:database
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+
+token:
+  secretKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIiLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.ih1aovtQShabQ7l0cINw4k1fagApg3qLWiB8Kt59Lno
+  validityInMilliseconds: 3600000
+
+payment:
+  secretKey: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+  password: ':'
+
+management:
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        include: health,info,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      access: read_only
+  health:
+    circuitbreakers:
+      enabled: true
+
