@@ -1,8 +1,9 @@
-package roomescape.payment.model;
+package roomescape.payment.client.dto.response;
 
+import roomescape.payment.model.Payment;
 import roomescape.reservation.model.Reservation;
 
-public record PaymentInfoFromClient(String paymentKey,
+public record ConfirmPaymentResponseFromClient(String paymentKey,
                                     String orderId,
                                     Long totalAmount) {
     public Payment toPayment(final Reservation reservation) {
