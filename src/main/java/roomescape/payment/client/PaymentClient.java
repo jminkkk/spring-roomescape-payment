@@ -3,8 +3,10 @@ package roomescape.payment.client;
 import java.util.logging.Logger;
 
 import roomescape.common.exception.ClientException;
-import roomescape.payment.client.dto.ConfirmPaymentRequest;
-import roomescape.payment.model.PaymentInfoFromClient;
+import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.response.CancelPaymentResponseFromClient;
+import roomescape.payment.client.dto.request.CancelPaymentRequest;
+import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
 
 public abstract class PaymentClient {
 
@@ -13,9 +15,9 @@ public abstract class PaymentClient {
 
     public abstract PaymentClientType getPaymentProvider();
 
-    public abstract PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey);
+    public abstract ConfirmPaymentResponseFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest);
 
-    public PaymentInfoFromClient fallbackConfirm(Exception ex) {
+    public ConfirmPaymentResponseFromClient fallbackConfirm(ConfirmPaymentRequest confirmPaymentRequest, Throwable ex) {
         PaymentClientType paymentClientType = getPaymentProvider();
 
         logger.warning("Payment provider " + paymentClientType + " unavailable, error: " + ex.getMessage());
