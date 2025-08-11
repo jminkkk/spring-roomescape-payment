@@ -53,12 +53,8 @@ public class PaymentService {
     }
 
     private boolean isClientAvailable(PaymentClient client) {
-        try {
             PaymentClientType paymentProvider = client.getPaymentProvider();
             CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(paymentProvider.name().toLowerCase() + "-payment");
             return circuitBreaker.getState() == CircuitBreaker.State.CLOSED;
-        } catch (Exception e) {
-            return true; // 조회 실패시 사용 가능한 것으로 간주
-        }
     }
 }
