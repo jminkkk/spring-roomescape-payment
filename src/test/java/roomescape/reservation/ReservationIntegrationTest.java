@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -30,7 +31,7 @@ import roomescape.member.domain.Member;
 import roomescape.member.domain.Role;
 import roomescape.member.repository.MemberRepository;
 import roomescape.payment.client.PaymentClient;
-import roomescape.payment.model.PaymentInfoFromClient;
+import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
 import roomescape.payment.repository.PaymentRepository;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.response.FindAvailableTimesResponse;
@@ -58,7 +59,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     private final WaitingRepository waitingRepository;
     private final PaymentRepository paymentRepository;
 
-    @MockBean
+    @Mock
     private PaymentClient paymentClient;
 
     @Autowired
@@ -83,7 +84,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void init() {
         RestAssured.port = this.port;
         Mockito.when(paymentClient.confirm(Mockito.any()))
-                .thenReturn(new PaymentInfoFromClient("paymentKey", "orderId", 100L));
+                .thenReturn(new ConfirmPaymentResponseFromClient("paymentKey", "orderId", 100L));
     }
 
     private String getTokenByLogin(final Member member) {
@@ -105,7 +106,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, 1L, "paymentKey", "orderId", 100_000L);
+                1L, 1L, "Toss", "paymentKey", "orderId", 100_000L);
 
         // when & then
         RestAssured.given(this.spec).log().all()
@@ -127,7 +128,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
 
         CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2099-11-30"), 1L, 1L,
-                "failPayment", "orderId", 100L);
+                "toss", "failPayment", "orderId", 100L);
 
         // stub
         Mockito.when(paymentClient.confirm(Mockito.any()))
@@ -172,7 +173,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenDateIsPast() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2000-11-30"),
-                1L, 1L, "paymentKey", "orderId", 100_000L);
+                1L, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -188,7 +189,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @Test
     @DisplayName("방탈출 예약 생성 실패: 날짜 없음")
     void createReservation_WhenDateIsNull() {
-        CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(null, 1L, 1L, "paymentKey",
+        CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(null, 1L, 1L, "toss","paymentKey",
                 "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -208,7 +209,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeIsInvalidType(Long timeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                timeId, 1L, "paymentKey", "orderId", 100_000L);
+                timeId, 1L, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -226,7 +227,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                null, 1L, "paymentKey", "orderId", 100_000L);
+                null, 1L, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -245,7 +246,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, 1L, "paymentKey", "orderId", 100_000L);
+                1L, 1L, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -264,7 +265,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenThemeIdIsInvalidType(Long themeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, themeId, "paymentKey", "orderId", 100_000L);
+                1L, themeId, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -282,7 +283,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenThemeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, null, "paymentKey", "orderId", 100_000L);
+                1L, null, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -302,7 +303,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, 1L, "paymentKey", "orderId", 100_000L);
+                1L, 1L, "toss","paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -326,7 +327,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 new Reservation(member, LocalDate.parse("2025-12-23"), reservationTime, theme));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(reservation.getDate(),
-                reservation.getReservationTime().getId(), reservation.getTheme().getId(), "paymentKey", "orderId",
+                reservation.getReservationTime().getId(), reservation.getTheme().getId(), "toss","paymentKey", "orderId",
                 100_000L);
 
         RestAssured.given(this.spec).log().all()

@@ -11,18 +11,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import roomescape.common.exception.ClientException;
 import roomescape.payment.client.PaymentClient;
+import roomescape.payment.client.PaymentClientType;
 import roomescape.payment.client.PaymentProperties;
 import roomescape.payment.client.PaymentRestClientConfiguration;
-import roomescape.payment.client.dto.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
 
 @RestClientTest({PaymentRestClientConfiguration.class, PaymentProperties.class})
-@MockBean(JpaMetamodelMappingContext.class)
 class TossRestClientTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,7 +42,7 @@ class TossRestClientTest {
     @Test
     @DisplayName("토스 결제 승인 실패: 유저에게 알리지 않을 사유라면 디폴트 메시지 전달")
     void confirm_WhenTossErrorCodeForUser() throws JsonProcessingException {
-        ConfirmPaymentRequest confirmPaymentRequest = new ConfirmPaymentRequest("paymetKey", "orderId", 100L);
+        ConfirmPaymentRequest confirmPaymentRequest = new ConfirmPaymentRequest(PaymentClientType.TOSS, "paymetKey", "orderId", 100L);
 
         // stub
         mockRestServiceServer.expect(requestTo("https://api.tosspayments.com/v1/payments/confirm"))
@@ -58,7 +56,7 @@ class TossRestClientTest {
     @Test
     @DisplayName("토스 결제 승인 실패: 유저에게 알릴 사유라면 토스 에러 메시지 전달")
     void confirm_WhenTossErrorCodeNotForUser() throws JsonProcessingException {
-        ConfirmPaymentRequest confirmPaymentRequest = new ConfirmPaymentRequest("paymetKey", "orderId", 100L);
+        ConfirmPaymentRequest confirmPaymentRequest = new ConfirmPaymentRequest(PaymentClientType.TOSS,"paymetKey", "orderId", 100L);
 
         // stub
         mockRestServiceServer.expect(requestTo("https://api.tosspayments.com/v1/payments/confirm"))

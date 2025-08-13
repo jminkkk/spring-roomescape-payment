@@ -6,19 +6,22 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
 import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ClientException;
 import roomescape.common.exception.ForbiddenException;
@@ -27,8 +30,7 @@ import roomescape.fixture.ReservationTimeFixture;
 import roomescape.fixture.ThemeFixture;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.payment.client.PaymentClient;
-import roomescape.payment.model.PaymentInfoFromClient;
+import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.response.CreateReservationResponse;
 import roomescape.reservation.dto.response.FindAdminReservationResponse;
@@ -51,26 +53,20 @@ import roomescape.waiting.repository.WaitingRepository;
 @DatabaseIsolation
 class ReservationServiceTest {
 
-    @MockBean
-    private PaymentClient paymentClient;
+//    @MockitoBean private TossPaymentClient tossPaymentClient;
+//    @MockitoBean private KaKaoPaymentClient kakaoPaymentClient;
+    @MockitoBean private PaymentService paymentService;
 
-    @Autowired
-    private ReservationService reservationService;
-    @Autowired
-    private ReservationTimeRepository reservationTimeRepository;
-    @Autowired
-    private ThemeRepository themeRepository;
-    @Autowired
-    private MemberRepository memberRepository;
-    @Autowired
-    private WaitingRepository waitingRepository;
-    @Autowired
-    private ReservationRepository reservationRepository;
+    @Autowired private ReservationService reservationService;
+    @Autowired private ReservationTimeRepository reservationTimeRepository;
+    @Autowired private ThemeRepository themeRepository;
+    @Autowired private MemberRepository memberRepository;
+    @Autowired private WaitingRepository waitingRepository;
+    @Autowired private ReservationRepository reservationRepository;
 
     @BeforeEach
     void setUp() {
-        Mockito.when(paymentClient.confirm(any()))
-                .thenReturn(new PaymentInfoFromClient("paymentKey", "orderId", 100_000L));
+        doNothing().when(paymentService).createPayment(any(), any());
     }
 
     @Test
@@ -82,8 +78,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.now().plusDays(1), reservationTime.getId(), theme.getId(),
-                "paymentKey", "orderId", 100_000L);
+                LocalDate.now().plusDays(1), reservationTime.getId(), theme.getId(), "Toss", "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when
@@ -104,12 +99,11 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "failPayment", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "Toss", "failPayment", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // stub
-        Mockito.when(paymentClient.confirm(any()))
-                .thenThrow(new ClientException("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요."));
+        doThrow(new ClientException("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요.")).when(paymentService).createPayment(any(), any());
 
         // when & then
         assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createMyReservationRequest))
@@ -125,7 +119,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), 1L, theme.getId(), "paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), 1L, theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
@@ -142,7 +136,7 @@ class ReservationServiceTest {
         Member member = memberRepository.save(MemberFixture.getOne());
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), reservationTime.getId(), 1L, "paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), 1L, "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
@@ -162,7 +156,7 @@ class ReservationServiceTest {
         reservationRepository.save(new Reservation(members.get(0), sameDate, sameReservationTime, sameTheme));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                sameDate, sameReservationTime.getId(), sameTheme.getId(), "paymentKey", "orderId", 100_000L);
+                sameDate, sameReservationTime.getId(), sameTheme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
@@ -181,7 +175,7 @@ class ReservationServiceTest {
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                sameDate, sameReservationTime.getId(), sameTheme.getId(), "paymentKey", "orderId", 100_000L);
+                sameDate, sameReservationTime.getId(), sameTheme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
@@ -357,7 +351,8 @@ class ReservationServiceTest {
         // then
         assertAll(
                 () -> assertTrue(reservationRepository.findAllByMemberId(waitingMember.getId()).contains(reservation)),
-                () -> assertFalse(reservationRepository.findAllByMemberId(reservationMember.getId()).contains(reservation)),
+                () -> assertFalse(
+                        reservationRepository.findAllByMemberId(reservationMember.getId()).contains(reservation)),
                 () -> assertThatThrownBy(() -> waitingRepository.getById(waiting.getId()))
                         .hasMessage("식별자 " + waiting.getId() + "에 해당하는 예약 대기가 존재하지 않습니다.")
                         .isInstanceOf(NoSuchElementException.class)

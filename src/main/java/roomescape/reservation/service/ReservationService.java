@@ -12,7 +12,7 @@ import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.payment.client.dto.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.request.CreateReservationByAdminRequest;

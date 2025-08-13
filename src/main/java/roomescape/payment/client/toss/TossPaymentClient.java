@@ -26,11 +26,13 @@ public class TossPaymentClient extends PaymentClient {
 
     @Override
     @CircuitBreaker(name = "toss-payment", fallbackMethod = "fallbackConfirm")
-    public PaymentInfoFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest, String idempotencyKey) {
+    public ConfirmPaymentResponseFromClient confirm(ConfirmPaymentRequest confirmPaymentRequest) {
+        TossConfirmRequest tossConfirmRequest = TossConfirmRequest.from(confirmPaymentRequest);
+
         return restClient.post()
                 .uri("/confirm")
-                .body(confirmPaymentRequest)
-                .header(IDEMPOTENCY_KEY_HEADER, idempotencyKey)
+                .body(tossConfirmRequest)
+                .header(IDEMPOTENCY_KEY_HEADER, confirmPaymentRequest.paymentKey())
                 .retrieve()
                 .toEntity(PaymentInfoFromClient.class)
                 .getBody();
