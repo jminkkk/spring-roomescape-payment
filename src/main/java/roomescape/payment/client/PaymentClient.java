@@ -24,4 +24,6 @@ public abstract class PaymentClient {
 
         throw new ClientException(paymentClientType + " 결제 서비스에 일시적 장애가 발생했습니다. 다른 결제 수단을 선택해주세요.");
     }
+
+    public abstract CancelPaymentResponseFromClient cancel(CancelPaymentRequest cancelPaymentRequest);
 }

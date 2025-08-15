@@ -6,8 +6,10 @@ import org.springframework.web.client.RestClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import roomescape.payment.client.PaymentClient;
 import roomescape.payment.client.PaymentClientType;
-import roomescape.payment.client.dto.ConfirmPaymentRequest;
-import roomescape.payment.model.PaymentInfoFromClient;
+import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.dto.response.CancelPaymentResponseFromClient;
+import roomescape.payment.client.dto.request.CancelPaymentRequest;
+import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
 
 
 @Component
@@ -34,7 +36,20 @@ public class TossPaymentClient extends PaymentClient {
                 .body(tossConfirmRequest)
                 .header(IDEMPOTENCY_KEY_HEADER, confirmPaymentRequest.paymentKey())
                 .retrieve()
-                .toEntity(PaymentInfoFromClient.class)
+                .toEntity(ConfirmPaymentResponseFromClient.class)
+                .getBody();
+    }
+
+    @Override
+    public CancelPaymentResponseFromClient cancel(CancelPaymentRequest cancelPaymentRequest) {
+        TossCancelRequest tossCancelRequest = TossCancelRequest.from(cancelPaymentRequest);
+
+        return restClient.post()
+                .uri("/"+ cancelPaymentRequest.paymentKey() + "/cancel")
+                .body(tossCancelRequest)
+                .header(IDEMPOTENCY_KEY_HEADER, cancelPaymentRequest.paymentKey())
+                .retrieve()
+                .toEntity(CancelPaymentResponseFromClient.class)
                 .getBody();
     }
 }

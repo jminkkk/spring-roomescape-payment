@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -36,6 +38,8 @@ import roomescape.waiting.service.WaitingService;
 @Transactional
 public class ReservationService {
 
+    private final Logger log = LoggerFactory.getLogger(ReservationService.class);
+
     private final WaitingService waitingService;
     private final PaymentService paymentService;
 
@@ -45,8 +49,8 @@ public class ReservationService {
     private final MemberRepository memberRepository;
     private final WaitingRepository waitingRepository;
 
-    public ReservationService(final WaitingService waitingService,
-                              final PaymentService paymentService, final ReservationRepository reservationRepository,
+    public ReservationService(final WaitingService waitingService, PaymentService paymentService,
+                              final ReservationRepository reservationRepository,
                               final ReservationTimeRepository reservationTimeRepository,
                               final ThemeRepository themeRepository,
                               final MemberRepository memberRepository,
@@ -60,12 +64,11 @@ public class ReservationService {
         this.waitingRepository = waitingRepository;
     }
 
-    public CreateReservationResponse createMyReservation(final AuthInfo authInfo,
-                                                         final CreateMyReservationRequest createMyReservationRequest) {
+    public CreateReservationResponse createMyReservation(final AuthInfo authInfo, final CreateMyReservationRequest createMyReservationRequest) {
         CreateReservationRequest createReservationRequest = CreateReservationRequest.of(authInfo.getMemberId(), createMyReservationRequest);
         Reservation reservation = reservationRepository.save(convertToReservation(createReservationRequest));
-        System.out.println("Reservation " + Thread.currentThread().getId());
-        System.out.println("Payment " + TransactionSynchronizationManager.getCurrentTransactionName());
+        log.error("[ ReservationService] Reservation {} ", Thread.currentThread().getId());
+        log.error("[ ReservationService] Payment {} ", TransactionSynchronizationManager.getCurrentTransactionName());
         paymentService.createPayment(ConfirmPaymentRequest.from(createMyReservationRequest), reservation);
         return CreateReservationResponse.from(reservation);
     }
