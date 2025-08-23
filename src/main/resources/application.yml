@@ -8,6 +8,12 @@ spring:
     hibernate:
       ddl-auto: create-drop
     defer-datasource-initialization: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache:
+    type: redis
 
 token:
   secretKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIiLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.ih1aovtQShabQ7l0cINw4k1fagApg3qLWiB8Kt59Lno
@@ -62,3 +68,8 @@ resilience4j:
         baseConfig: default
       toss-payment:
         baseConfig: default
+
+logging:
+  level:
+    org.springframework.transaction.interceptor: DEBUG
+    org.springframework.orm.jpa.JpaTransactionManager: DEBUG
