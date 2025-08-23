@@ -55,9 +55,8 @@ import roomescape.waiting.repository.WaitingRepository;
 @DatabaseIsolation
 class ReservationServiceTest {
 
-//    @MockitoBean private TossPaymentClient tossPaymentClient;
-//    @MockitoBean private KaKaoPaymentClient kakaoPaymentClient;
-    @MockitoBean private PaymentService paymentService;
+    @MockitoBean
+    private PaymentService paymentService;
 
     @Autowired private ReservationService reservationService;
     @Autowired private ReservationTimeRepository reservationTimeRepository;
@@ -69,14 +68,14 @@ class ReservationServiceTest {
     private ReservationTime reservationTime;
     private Theme theme;
     private Member member;
+    private Reservation reservation;
 
     @BeforeEach
     void setUp() {
         reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         theme = themeRepository.save(ThemeFixture.getOne());
-        member = memberRepository.save(MemberFixture.getAdmin());
-
-        Reservation reservation = reservationRepository.save(ReservationFixture.getOneWithId(1L));
+        member = memberRepository.save(MemberFixture.getOne());
+        reservation = reservationRepository.save(ReservationFixture.getOneWithMemberTimeTheme(member, reservationTime, theme));
         Payment mockPayment = new Payment(
                 "paymentKey",
                 "orderId",
@@ -101,13 +100,14 @@ class ReservationServiceTest {
                 createReservationRequest);
 
         // then
-        assertThat(createReservationResponse.id()).isEqualTo(1L);
+        assertThat(createReservationResponse.id()).isEqualTo(reservation.getId() + 1);
     }
 
     @Test
     @DisplayName("회원 예약 생성 실패: 결제 오류 시 예약은 저장되지 않는다.")
     void createReservation_ifPaymentClientError_throwException() {
         // given
+        Member otherMember = memberRepository.save(MemberFixture.getAdmin());
         CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
                 LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "Toss", "failPayment", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
@@ -118,35 +118,37 @@ class ReservationServiceTest {
         // when & then
         assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createMyReservationRequest))
                 .isInstanceOf(ClientException.class);
-        assertThat(reservationRepository.count()).isEqualTo(0L);
+        assertThat(reservationRepository.findAllByMemberId(otherMember.getId())).isEmpty();
     }
 
     @Test
     @DisplayName("회원 예약 생성 실패: 없는 시간")
     void createReservation_ifReservationTimeNotExist_throwException() {
         // given
+        long notExistTimeId = reservationTime.getId() + 1L;
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), 1L, theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), notExistTimeId, theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
         assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("식별자 1에 해당하는 시간이 존재하지 않습니다.");
+                .hasMessage("식별자 "+ notExistTimeId  +"에 해당하는 시간이 존재하지 않습니다.");
     }
 
     @Test
     @DisplayName("회원 예약 생성 실패: 없는 테마")
     void createReservation_ifThemeNotExist_throwException() {
         // given
+        long notExistThemeId = reservationTime.getId() + 1L;
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId() + 1, "Toss","paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), notExistThemeId, "Toss", "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
         assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("식별자 1에 해당하는 테마가 존재하지 않습니다.");
+                .hasMessage("식별자 " + notExistThemeId + "에 해당하는 테마가 존재하지 않습니다.");
     }
 
     @Test
@@ -154,13 +156,11 @@ class ReservationServiceTest {
     void createReservation_ifExistSameDateAndTime_throwException() {
         // given
         LocalDate sameDate = LocalDate.parse("2026-10-10");
-        ReservationTime sameReservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme sameTheme = themeRepository.save(ThemeFixture.getOne());
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
-        reservationRepository.save(new Reservation(members.get(0), sameDate, sameReservationTime, sameTheme));
+        reservationRepository.save(new Reservation(members.get(0), sameDate, reservationTime, theme));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                sameDate, sameReservationTime.getId(), sameTheme.getId(), "Toss","paymentKey", "orderId", 100_000L);
+                sameDate, reservationTime.getId(), theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
@@ -174,12 +174,10 @@ class ReservationServiceTest {
     void createReservation_validateReservationDateTime_throwException() {
         // given
         LocalDate sameDate = LocalDate.parse("2024-04-10");
-        ReservationTime sameReservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme sameTheme = themeRepository.save(ThemeFixture.getOne());
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                sameDate, sameReservationTime.getId(), sameTheme.getId(), "Toss","paymentKey", "orderId", 100_000L);
+                sameDate, reservationTime.getId(), theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
@@ -193,16 +191,15 @@ class ReservationServiceTest {
     void getReservations() {
         // give
         LocalDate date = LocalDate.parse("2026-04-10");
-        Member member = memberRepository.save(MemberFixture.getOne());
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation1 = reservationRepository.save(new Reservation(member, date, reservationTime, theme));
         Reservation reservation2 = reservationRepository.save(new Reservation(member, date, reservationTime, theme));
 
         // when & then
-        assertThat(reservationService.getReservations()).containsExactly(
+        assertThat(reservationService.getReservations()).containsExactlyInAnyOrder(
                 FindAdminReservationResponse.from(reservation1),
-                FindAdminReservationResponse.from(reservation2));
+                FindAdminReservationResponse.from(reservation2),
+                FindAdminReservationResponse.from(reservation)
+                );
     }
 
     @Test
@@ -221,9 +218,9 @@ class ReservationServiceTest {
     @DisplayName("예약 단건 조회 실패: 없는 예약")
     void getReservation_ifNotExist_throwException() {
         // when & then
-        assertThatThrownBy(() -> reservationService.getReservation(1L))
+        assertThatThrownBy(() -> reservationService.getReservation(1000L))
                 .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("식별자 1에 해당하는 예약이 존재하지 않습니다.");
+                .hasMessage("식별자 1000에 해당하는 예약이 존재하지 않습니다.");
     }
 
     @Test
@@ -231,6 +228,7 @@ class ReservationServiceTest {
     void getReservationsByMember() {
         // given
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
+        Member member = members.get(0);
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
         Reservation reservationByOtherMember = reservationRepository.save(
@@ -288,15 +286,16 @@ class ReservationServiceTest {
     @DisplayName("예약 취소 성공: 내 예약")
     void cancelReservation() {
         // given
+        Member otherMember = memberRepository.save(MemberFixture.getAdmin());
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
         // when
-        AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
+        AuthInfo authInfo = new AuthInfo(otherMember.getId(), otherMember.getName(), otherMember.getRole());
         reservationService.deleteReservation(authInfo, reservation.getId());
 
         // then
-        assertThat(reservationRepository.findAllByMemberId(member.getId())).isEmpty();
+        assertThat(reservationRepository.findAllByMemberId(otherMember.getId())).isEmpty();
     }
 
     @Test
@@ -312,7 +311,7 @@ class ReservationServiceTest {
         reservationService.deleteReservation(authInfo, reservation.getId());
 
         // then
-        assertThat(reservationRepository.findAllByMemberId(member.getId())).isEmpty();
+        assertThat(reservationRepository.findAllByMemberId(member.getId())).doesNotContain(reservation);
     }
 
     @Test
@@ -357,6 +356,6 @@ class ReservationServiceTest {
         // then
         assertThatThrownBy(() -> reservationService.deleteReservation(authInfo, reservation.getId()))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("식별자 1인 예약에 대해 회원 식별자 2의 권한이 존재하지 않아, 삭제가 불가능합니다.");
+                .hasMessage("식별자 " + reservation.getId() + "인 예약에 대해 회원 식별자 " + otherMember.getId() +"의 권한이 존재하지 않아, 삭제가 불가능합니다.");
     }
 }
