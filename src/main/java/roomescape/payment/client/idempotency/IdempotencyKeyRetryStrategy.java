@@ -1,4 +1,4 @@
-package roomescape.payment.client;
+package roomescape.payment.client.idempotency;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
