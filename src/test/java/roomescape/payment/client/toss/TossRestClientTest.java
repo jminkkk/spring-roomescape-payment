@@ -4,37 +4,36 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
-import roomescape.common.exception.ClientException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import roomescape.payment.client.PaymentClient;
 import roomescape.payment.client.PaymentClientType;
-import roomescape.payment.client.PaymentProperties;
-import roomescape.payment.client.PaymentRestClientConfiguration;
 import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
+import roomescape.payment.client.exception.PaymentBusinessException;
+import roomescape.payment.client.exception.PaymentClientException;
 
-@RestClientTest({PaymentRestClientConfiguration.class, PaymentProperties.class})
 class TossRestClientTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private PaymentClient paymentClient;
-
-    @Autowired
-    private RestClient.Builder restClientBuilder;
-
-    @Autowired
     private MockRestServiceServer mockRestServiceServer;
 
     @BeforeEach
     void setUp() {
+        RestClient.Builder restClientBuilder = RestClient.builder()
+                .baseUrl("https://api.tosspayments.com/v1/payments")
+                .defaultStatusHandler(new TossPaymentErrorHandler())
+                .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+
         mockRestServiceServer = MockRestServiceServer.bindTo(restClientBuilder).build();
         paymentClient = new TossPaymentClient(restClientBuilder.build());
     }
@@ -46,10 +45,10 @@ class TossRestClientTest {
 
         // stub
         mockRestServiceServer.expect(requestTo("https://api.tosspayments.com/v1/payments/confirm"))
-                        .andRespond(withServerError().body(objectMapper.writeValueAsString(new TossClientErrorResponse("UNAUTHORIZED_KEY", "인증되지 않은 시크릿 키 혹은 클라이언트 키 입니다."))));
+                .andRespond(withServerError().body(objectMapper.writeValueAsString(new TossClientErrorResponse("UNAUTHORIZED_KEY", "인증되지 않은 시크릿 키 혹은 클라이언트 키 입니다."))));
 
         assertThatThrownBy(() -> paymentClient.confirm(confirmPaymentRequest))
-                .isInstanceOf(ClientException.class)
+                .isInstanceOf(PaymentClientException.class)
                 .hasMessage("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요.");
     }
 
@@ -63,7 +62,7 @@ class TossRestClientTest {
                 .andRespond(withServerError().body(objectMapper.writeValueAsString(new TossClientErrorResponse("EXCEED_MAX_ONE_DAY_AMOUNT", "일일 한도를 초과했습니다."))));
 
         assertThatThrownBy(() -> paymentClient.confirm(confirmPaymentRequest))
-                .isInstanceOf(ClientException.class)
+                .isInstanceOf(PaymentBusinessException.class)
                 .hasMessage("일일 한도를 초과했습니다.");
     }
 }

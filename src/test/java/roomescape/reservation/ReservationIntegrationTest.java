@@ -208,7 +208,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 .then().log().all()
 
                 .statusCode(500)
-                .body("detail", equalTo("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요."));
+                .body("detail", equalTo("TOSS 결제 서비스에 일시적 장애가 발생했습니다. 다른 결제 수단을 선택해주세요."));
         assertThat(reservationRepository.count()).isZero();
         assertThat(paymentRepository.count()).isZero();
 

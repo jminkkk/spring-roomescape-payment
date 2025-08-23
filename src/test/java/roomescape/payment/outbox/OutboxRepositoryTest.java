@@ -26,7 +26,7 @@ class OutboxRepositoryTest {
         Outbox outbox3 = outboxRepository.save(new Outbox("Payment Failure3", "Reservation Data"));
         outbox3.markCompleted();
 
-        List<Outbox> allByStatusOrderByCreatedAt = outboxRepository.findAllByOutboxStatusOrderByCreatedAt(OutboxStatus.COMPLETED);
+        List<Outbox> allByStatusOrderByCreatedAt = outboxRepository.findAllByOutboxStatusOrderByCreatedAt(OutboxStatus.PENDING);
 
         assertThat(allByStatusOrderByCreatedAt)
                 .containsExactlyInAnyOrder(outbox1, outbox2)

@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -26,10 +26,12 @@ import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ClientException;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.fixture.MemberFixture;
+import roomescape.fixture.ReservationFixture;
 import roomescape.fixture.ReservationTimeFixture;
 import roomescape.fixture.ThemeFixture;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
+import roomescape.payment.model.Payment;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.response.CreateReservationResponse;
@@ -64,19 +66,31 @@ class ReservationServiceTest {
     @Autowired private WaitingRepository waitingRepository;
     @Autowired private ReservationRepository reservationRepository;
 
+    private ReservationTime reservationTime;
+    private Theme theme;
+    private Member member;
+
     @BeforeEach
     void setUp() {
-        doNothing().when(paymentService).createPayment(any(), any());
+        reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
+        theme = themeRepository.save(ThemeFixture.getOne());
+        member = memberRepository.save(MemberFixture.getAdmin());
+
+        Reservation reservation = reservationRepository.save(ReservationFixture.getOneWithId(1L));
+        Payment mockPayment = new Payment(
+                "paymentKey",
+                "orderId",
+                100_000L,
+                reservation
+        );
+
+        when(paymentService.createPayment(any(), any())).thenReturn(mockPayment);
     }
 
     @Test
     @DisplayName("회원 예약 생성 성공")
     void createReservation() {
         // given
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
-        Member member = memberRepository.save(MemberFixture.getOne());
-
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.now().plusDays(1), reservationTime.getId(), theme.getId(), "Toss", "paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
@@ -94,10 +108,6 @@ class ReservationServiceTest {
     @DisplayName("회원 예약 생성 실패: 결제 오류 시 예약은 저장되지 않는다.")
     void createReservation_ifPaymentClientError_throwException() {
         // given
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
-        Member member = memberRepository.save(MemberFixture.getOne());
-
         CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
                 LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "Toss", "failPayment", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
@@ -115,9 +125,6 @@ class ReservationServiceTest {
     @DisplayName("회원 예약 생성 실패: 없는 시간")
     void createReservation_ifReservationTimeNotExist_throwException() {
         // given
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
-        Member member = memberRepository.save(MemberFixture.getOne());
-
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.of(2026, 10, 10), 1L, theme.getId(), "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
@@ -132,11 +139,8 @@ class ReservationServiceTest {
     @DisplayName("회원 예약 생성 실패: 없는 테마")
     void createReservation_ifThemeNotExist_throwException() {
         // given
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Member member = memberRepository.save(MemberFixture.getOne());
-
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), reservationTime.getId(), 1L, "Toss","paymentKey", "orderId", 100_000L);
+                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId() + 1, "Toss","paymentKey", "orderId", 100_000L);
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
@@ -205,9 +209,6 @@ class ReservationServiceTest {
     @DisplayName("예약 단건 조회 성공")
     void getReservation() {
         // given
-        Member member = memberRepository.save(MemberFixture.getOne());
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
@@ -230,10 +231,6 @@ class ReservationServiceTest {
     void getReservationsByMember() {
         // given
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
-
-        Member member = members.get(0);
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
         Reservation reservationByOtherMember = reservationRepository.save(
@@ -251,21 +248,17 @@ class ReservationServiceTest {
     @DisplayName("가능한 예약 시간 조회 성공")
     void getAvailableTimes() {
         LocalDate date = LocalDate.parse("2026-10-23");
-        Member member = memberRepository.save(MemberFixture.getOne());
-        ReservationTime reservationTime1 = reservationTimeRepository.save(
-                new ReservationTime(LocalTime.parse("10:00")));
-        ReservationTime reservationTime2 = reservationTimeRepository.save(
+        ReservationTime otherReservationTime = reservationTimeRepository.save(
                 new ReservationTime(LocalTime.parse("20:00")));
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
 
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, date, reservationTime1, theme));
+                new Reservation(member, date, reservationTime, theme));
 
         // when & then
         assertThat(reservationService.getAvailableTimes(date, theme.getId()))
                 .isEqualTo(List.of(
                         FindAvailableTimesResponse.from(reservation.getReservationTime(), true),
-                        FindAvailableTimesResponse.from(reservationTime2, false))
+                        FindAvailableTimesResponse.from(otherReservationTime, false))
                 );
     }
 
@@ -274,8 +267,6 @@ class ReservationServiceTest {
     void searchBy() {
         // give
         List<Member> members = MemberFixture.get(2).stream().map(memberRepository::save).toList();
-        ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
 
         LocalDate dateFrom = LocalDate.parse("2026-04-10");
         LocalDate dateTo = LocalDate.parse("2026-04-10");
@@ -297,9 +288,6 @@ class ReservationServiceTest {
     @DisplayName("예약 취소 성공: 내 예약")
     void cancelReservation() {
         // given
-        Member member = memberRepository.save(MemberFixture.getOne());
-        ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
@@ -316,9 +304,6 @@ class ReservationServiceTest {
     void cancelReservation_WhenRoleIsAdmin_Success() {
         // given
         Member admin = memberRepository.save(MemberFixture.getAdmin());
-        Member member = memberRepository.save(MemberFixture.getOne());
-        ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
@@ -336,8 +321,6 @@ class ReservationServiceTest {
         // given
         Member reservationMember = memberRepository.save(MemberFixture.getOne("reservation@member.com"));
         Member waitingMember = memberRepository.save(MemberFixture.getOne("waiting@member.com"));
-        ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
                 new Reservation(reservationMember, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
@@ -364,10 +347,7 @@ class ReservationServiceTest {
     @DisplayName("예약 취소 성공: 권한 없음")
     void cancelReservation_WhenForbidden_throwException() {
         // given
-        Member member = memberRepository.save(MemberFixture.getOne());
         Member otherMember = memberRepository.save(MemberFixture.getOne("otherMember@nn.com"));
-        ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("10:00")));
-        Theme theme = themeRepository.save(ThemeFixture.getOne());
         Reservation reservation = reservationRepository.save(
                 new Reservation(member, LocalDate.parse("2026-04-10"), reservationTime, theme));
 
