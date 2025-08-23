@@ -1,16 +1,20 @@
 package roomescape.reservation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,11 +22,22 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import roomescape.auth.domain.AuthInfo;
 import roomescape.auth.dto.request.LoginRequest;
 import roomescape.common.exception.ClientException;
+import roomescape.common.outbox.Outbox;
+import roomescape.common.outbox.OutboxRepository;
+import roomescape.common.outbox.OutboxStatus;
 import roomescape.fixture.MemberFixture;
 import roomescape.fixture.ReservationFixture;
 import roomescape.fixture.ReservationTimeFixture;
@@ -32,6 +47,8 @@ import roomescape.member.domain.Role;
 import roomescape.member.repository.MemberRepository;
 import roomescape.payment.client.PaymentClient;
 import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
+import roomescape.payment.client.toss.TossPaymentClient;
+import roomescape.payment.model.Payment;
 import roomescape.payment.repository.PaymentRepository;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.response.FindAvailableTimesResponse;
@@ -40,6 +57,7 @@ import roomescape.reservation.dto.response.FindReservationWithPaymentResponse;
 import roomescape.reservation.model.Reservation;
 import roomescape.reservation.model.ReservationWithPayment;
 import roomescape.reservation.repository.ReservationRepository;
+import roomescape.reservation.service.ReservationService;
 import roomescape.reservationtime.model.ReservationTime;
 import roomescape.reservationtime.repository.ReservationTimeRepository;
 import roomescape.theme.model.Theme;
@@ -55,26 +73,27 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     private final MemberRepository memberRepository;
     private final ReservationTimeRepository reservationTimeRepository;
     private final ThemeRepository themeRepository;
-    private final ReservationRepository reservationRepository;
     private final WaitingRepository waitingRepository;
-    private final PaymentRepository paymentRepository;
+    private final OutboxRepository outboxRepository;
+    private final ReservationService reservationService;
 
-    @Mock
-    private PaymentClient paymentClient;
+    @MockitoSpyBean private TossPaymentClient tossPaymentClient;
+    @MockitoSpyBean private ReservationRepository reservationRepository;
+    @MockitoSpyBean private PaymentRepository paymentRepository;
 
     @Autowired
     ReservationIntegrationTest(final MemberRepository memberRepository,
-                               final ReservationTimeRepository reservationTimeRepository,
-                               final ThemeRepository themeRepository,
-                               final ReservationRepository reservationRepository,
-                               final WaitingRepository waitingRepository,
-                               final PaymentRepository paymentRepository) {
+            final ReservationTimeRepository reservationTimeRepository,
+            final ThemeRepository themeRepository,
+            final WaitingRepository waitingRepository,
+            final OutboxRepository outboxRepository, ReservationService reservationService
+    ) {
         this.memberRepository = memberRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
-        this.reservationRepository = reservationRepository;
         this.waitingRepository = waitingRepository;
-        this.paymentRepository = paymentRepository;
+        this.outboxRepository = outboxRepository;
+        this.reservationService = reservationService;
     }
 
     @LocalServerPort
@@ -83,8 +102,9 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @BeforeEach
     void init() {
         RestAssured.port = this.port;
-        Mockito.when(paymentClient.confirm(Mockito.any()))
-                .thenReturn(new ConfirmPaymentResponseFromClient("paymentKey", "orderId", 100L));
+        doReturn(new ConfirmPaymentResponseFromClient("paymentKey", "orderId", 100_000L))
+                .when(tossPaymentClient)
+                .confirm(any());
     }
 
     private String getTokenByLogin(final Member member) {
@@ -120,6 +140,51 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     }
 
     @Test
+    @DisplayName("결제 성공, DB 롤백 시 Outbox 이벤트 생성")
+    void createReservation_PaymentSuccess_DBFail_OutboxCreated() {
+        // given
+        Member member = memberRepository.save(new Member("롸키", Role.USER, "loki@naver.com", "loki"));
+        ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
+        Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
+
+        CreateMyReservationRequest request = new CreateMyReservationRequest(
+                LocalDate.parse("2099-11-30"),
+                member.getId(),
+                theme.getId(),
+                "toss",
+                "paymentKey",
+                "orderId",
+                100_000L
+        );
+
+        // 결제 API 성공
+        doReturn(new ConfirmPaymentResponseFromClient("paymentKey", "orderId", 100_000L))
+                .when(tossPaymentClient).confirm(any());
+
+        // Payment 저장 시 예외 발생
+        doThrow(new RuntimeException("Payment DB 저장 실패"))
+                .when(paymentRepository).save(any(Payment.class));
+
+        // when
+        assertThatThrownBy(() -> {
+            reservationService.createMyReservation(
+                    new AuthInfo(member.getId(), member.getName(), member.getRole()),
+                    request
+            );
+        }).isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Payment DB 저장 실패");
+
+        // then
+        assertAll(
+                () -> verify(tossPaymentClient).confirm(any()),
+                () -> verify(paymentRepository).save(any(Payment.class)),
+                () -> assertThat(reservationRepository.count()).isZero(),
+                () -> assertThat(paymentRepository.count()).isZero(),
+                () -> assertThat(outboxRepository.count()).isEqualTo(1L)
+        );
+    }
+
+    @Test
     @DisplayName("방탈출 예약 생성 실패: 결제 실패 시, 결제 및 예약 정보 모두 저장되지 않음")
     void createReservation_WhenPaymentClientException() {
         // given
@@ -131,7 +196,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 "toss", "failPayment", "orderId", 100L);
 
         // stub
-        Mockito.when(paymentClient.confirm(Mockito.any()))
+        Mockito.when(tossPaymentClient.confirm(any()))
                 .thenThrow(new ClientException("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요."));
 
         // when
@@ -189,7 +254,8 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @Test
     @DisplayName("방탈출 예약 생성 실패: 날짜 없음")
     void createReservation_WhenDateIsNull() {
-        CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(null, 1L, 1L, "toss","paymentKey",
+        CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(null, 1L, 1L, "toss",
+                "paymentKey",
                 "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -209,7 +275,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeIsInvalidType(Long timeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                timeId, 1L, "toss","paymentKey", "orderId", 100_000L);
+                timeId, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -227,7 +293,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                null, 1L, "toss","paymentKey", "orderId", 100_000L);
+                null, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -246,7 +312,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, 1L, "toss","paymentKey", "orderId", 100_000L);
+                1L, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -265,7 +331,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenThemeIdIsInvalidType(Long themeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, themeId, "toss","paymentKey", "orderId", 100_000L);
+                1L, themeId, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -283,7 +349,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenThemeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, null, "toss","paymentKey", "orderId", 100_000L);
+                1L, null, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -303,7 +369,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
                 LocalDate.parse("2025-11-30"),
-                1L, 1L, "toss","paymentKey", "orderId", 100_000L);
+                1L, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
@@ -327,7 +393,8 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 new Reservation(member, LocalDate.parse("2025-12-23"), reservationTime, theme));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(reservation.getDate(),
-                reservation.getReservationTime().getId(), reservation.getTheme().getId(), "toss","paymentKey", "orderId",
+                reservation.getReservationTime().getId(), reservation.getTheme().getId(), "toss", "paymentKey",
+                "orderId",
                 100_000L);
 
         RestAssured.given(this.spec).log().all()
