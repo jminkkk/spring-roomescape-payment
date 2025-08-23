@@ -26,9 +26,15 @@ public class PaymentRestClientConfiguration {
     private static final String BASIC_PREFIX = "Basic ";
 
     private final PaymentProperties paymentProperties;
+    private final IdempotencyInterceptor idempotencyInterceptor;
+    private final TossPaymentErrorHandler tossPaymentErrorHandler;
 
-    public PaymentRestClientConfiguration(final PaymentProperties paymentProperties) {
+    public PaymentRestClientConfiguration(final PaymentProperties paymentProperties, final IdempotencyInterceptor idempotencyInterceptor,
+            TossPaymentErrorHandler tossPaymentErrorHandler
+    ) {
         this.paymentProperties = paymentProperties;
+        this.idempotencyInterceptor = idempotencyInterceptor;
+        this.tossPaymentErrorHandler = tossPaymentErrorHandler;
     }
 
     @Bean
@@ -36,7 +42,8 @@ public class PaymentRestClientConfiguration {
         return restClient()
                 .baseUrl("https://api.tosspayments.com/v1/payments")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, getClientAuthorizationValue())
-                .defaultStatusHandler(new TossPaymentErrorHandler())
+                .requestInterceptor(idempotencyInterceptor)
+                .defaultStatusHandler(tossPaymentErrorHandler)
                 .build();
     }
 
