@@ -5,6 +5,7 @@ import java.net.URI;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResponseErrorHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import roomescape.payment.client.exception.PaymentInfrastructureException;
 import roomescape.payment.client.exception.PaymentProviderException;
 import roomescape.payment.client.exception.PaymentStateException;
 
+@Component
 public class TossPaymentErrorHandler implements ResponseErrorHandler {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
