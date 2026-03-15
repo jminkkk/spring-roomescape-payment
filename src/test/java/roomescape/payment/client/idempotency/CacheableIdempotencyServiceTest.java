@@ -12,9 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 
+import roomescape.config.RedisTestContainersConfig;
 import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
 
 @SpringBootTest
+@RedisTestContainersConfig
 class CacheableIdempotencyServiceTest {
 
     @Autowired private CacheableIdempotencyService cacheableIdempotencyService;
