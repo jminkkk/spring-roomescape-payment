@@ -125,7 +125,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 1L, 1L, "Toss", "paymentKey", "orderId", 100_000L);
 
         // when & then
@@ -274,7 +274,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 시간 식별자 형식")
     void createReservation_WhenTimeIsInvalidType(Long timeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 timeId, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -292,7 +292,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 시간 null")
     void createReservation_WhenTimeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 null, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -311,7 +311,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     void createReservation_WhenTimeNotExist() {
         themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 1L, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -330,7 +330,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 테마 식별자 형식")
     void createReservation_WhenThemeIdIsInvalidType(Long themeId) {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 1L, themeId, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -348,7 +348,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 생성 실패: 테마 null")
     void createReservation_WhenThemeIsNull() {
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 1L, null, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -368,7 +368,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
-                LocalDate.parse("2025-11-30"),
+                LocalDate.parse("2999-11-30"),
                 1L, 1L, "toss", "paymentKey", "orderId", 100_000L);
 
         RestAssured.given(this.spec).log().all()
@@ -390,7 +390,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2025-12-23"), reservationTime, theme));
+                new Reservation(member, LocalDate.parse("2999-12-23"), reservationTime, theme));
 
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(reservation.getDate(),
                 reservation.getReservationTime().getId(), reservation.getTheme().getId(), "toss", "paymentKey",
@@ -405,7 +405,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 .then().log().all()
 
                 .statusCode(400)
-                .body("detail", equalTo("이미 2025-12-23의 테마이름 테마에는 20:00 시의 예약이 존재하여 예약을 생성할 수 없습니다."));
+                .body("detail", equalTo("이미 2999-12-23의 테마이름 테마에는 20:00 시의 예약이 존재하여 예약을 생성할 수 없습니다."));
     }
 
     @Test
