@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------  결제위젯 초기화 ------
   // @docs https://docs.tosspayments.com/reference/widget-sdk#sdk-설치-및-초기화
   // @docs https://docs.tosspayments.com/reference/widget-sdk#renderpaymentmethods선택자-결제-금액-옵션
-  const paymentAmount = 1000;
+  const paymentAmount = 10;
   const widgetClientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
   const paymentWidget = PaymentWidget(widgetClientKey, PaymentWidget.ANONYMOUS);
   paymentWidget.renderPaymentMethods(
@@ -157,6 +157,7 @@ function onReservationButtonClick(event, paymentWidget) {
   const selectedDate = document.getElementById("datepicker").value;
   const selectedThemeId = document.querySelector('.theme-slot.active')?.getAttribute('data-theme-id');
   const selectedTimeId = document.querySelector('.time-slot.active')?.getAttribute('data-time-id');
+  const selectedProviderName = "Toss";
   const name = document.getElementById('reserve-button').value;
 
   if (selectedDate && selectedThemeId && selectedTimeId) {
@@ -164,7 +165,8 @@ function onReservationButtonClick(event, paymentWidget) {
     const reservationData = {
       date: selectedDate,
       timeId: selectedTimeId,
-      themeId: selectedThemeId
+      themeId: selectedThemeId,
+      providerName: selectedProviderName
     };
 
     console.log(reservationData)
@@ -198,8 +200,9 @@ async function fetchReservationPayment(paymentData, reservationData) {
     paymentKey: paymentData.paymentKey,
     orderId: paymentData.orderId,
     amount: paymentData.amount,
-    paymentType: paymentData.paymentType,
+    providerName: "toss",
   }
+  console.log("전송할 예약 데이터:", reservationPaymentRequest);
 
   const reservationURL = "/reservations";
   fetch(reservationURL, {
