@@ -5,9 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,7 +20,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import roomescape.auth.domain.AuthInfo;
-import roomescape.common.exception.ClientException;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.fixture.MemberFixture;
 import roomescape.fixture.ReservationFixture;
@@ -31,10 +27,8 @@ import roomescape.fixture.ReservationTimeFixture;
 import roomescape.fixture.ThemeFixture;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.payment.model.Payment;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
-import roomescape.reservation.dto.response.CreateReservationResponse;
 import roomescape.reservation.dto.response.FindAdminReservationResponse;
 import roomescape.reservation.dto.response.FindAvailableTimesResponse;
 import roomescape.reservation.dto.response.FindReservationResponse;
@@ -76,18 +70,10 @@ class ReservationServiceTest {
         theme = themeRepository.save(ThemeFixture.getOne());
         member = memberRepository.save(MemberFixture.getOne());
         reservation = reservationRepository.save(ReservationFixture.getOneWithMemberTimeTheme(member, reservationTime, theme));
-        Payment mockPayment = new Payment(
-                "paymentKey",
-                "orderId",
-                100_000L,
-                reservation
-        );
-
-        when(paymentService.createPayment(any(), any())).thenReturn(mockPayment);
     }
 
     @Test
-    @DisplayName("회원 예약 생성 성공")
+    @DisplayName("회원 예약 생성 성공: Reservation + Payment(IN_PROGRESS) 함께 저장")
     void createReservation() {
         // given
         CreateMyReservationRequest createReservationRequest = new CreateMyReservationRequest(
@@ -95,30 +81,10 @@ class ReservationServiceTest {
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when
-        CreateReservationResponse createReservationResponse = reservationService.createMyReservation(
-                authInfo,
-                createReservationRequest);
+        Reservation created = reservationService.createReservation(authInfo, createReservationRequest);
 
         // then
-        assertThat(createReservationResponse.id()).isEqualTo(reservation.getId() + 1);
-    }
-
-    @Test
-    @DisplayName("회원 예약 생성 실패: 결제 오류 시 예약은 저장되지 않는다.")
-    void createReservation_ifPaymentClientError_throwException() {
-        // given
-        Member otherMember = memberRepository.save(MemberFixture.getAdmin());
-        CreateMyReservationRequest createMyReservationRequest = new CreateMyReservationRequest(
-                LocalDate.of(2026, 10, 10), reservationTime.getId(), theme.getId(), "Toss", "failPayment", "orderId", 100_000L);
-        AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
-
-        // stub
-        doThrow(new ClientException("결제 오류입니다. 같은 문제가 반복된다면 문의해주세요.")).when(paymentService).createPayment(any(), any());
-
-        // when & then
-        assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createMyReservationRequest))
-                .isInstanceOf(ClientException.class);
-        assertThat(reservationRepository.findAllByMemberId(otherMember.getId())).isEmpty();
+        assertThat(created.getId()).isEqualTo(reservation.getId() + 1);
     }
 
     @Test
@@ -131,7 +97,7 @@ class ReservationServiceTest {
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
-        assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
+        assertThatThrownBy(() -> reservationService.createReservation(authInfo, createReservationRequest))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessage("식별자 "+ notExistTimeId  +"에 해당하는 시간이 존재하지 않습니다.");
     }
@@ -146,7 +112,7 @@ class ReservationServiceTest {
         AuthInfo authInfo = new AuthInfo(member.getId(), member.getName(), member.getRole());
 
         // when & then
-        assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
+        assertThatThrownBy(() -> reservationService.createReservation(authInfo, createReservationRequest))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessage("식별자 " + notExistThemeId + "에 해당하는 테마가 존재하지 않습니다.");
     }
@@ -164,7 +130,7 @@ class ReservationServiceTest {
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
-        assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
+        assertThatThrownBy(() -> reservationService.createReservation(authInfo, createReservationRequest))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("이미 2026-10-10의 테마 이름 테마에는 10:00 시의 예약이 존재하여 예약을 생성할 수 없습니다.");
     }
@@ -181,7 +147,7 @@ class ReservationServiceTest {
         AuthInfo authInfo = new AuthInfo(members.get(1).getId(), members.get(1).getName(), members.get(1).getRole());
 
         // when & then
-        assertThatThrownBy(() -> reservationService.createMyReservation(authInfo, createReservationRequest))
+        assertThatThrownBy(() -> reservationService.createReservation(authInfo, createReservationRequest))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("2024-04-10는 지나간 시간임으로 예약 생성이 불가능합니다. 현재 이후 날짜로 재예약해주세요.");
     }

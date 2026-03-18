@@ -22,7 +22,6 @@ public class ReservationFixture {
 
     public static Reservation getOneWithTheme(final Theme theme) {
         return new Reservation(
-                null,
                 MemberFixture.getOne(),
                 LocalDate.parse("3000-10-10"),
                 ReservationTimeFixture.getOne(),
@@ -32,7 +31,6 @@ public class ReservationFixture {
 
     public static Reservation getOneWithMember(final Member member) {
         return new Reservation(
-                null,
                 member,
                 LocalDate.parse("3000-10-10"),
                 ReservationTimeFixture.getOne(),
@@ -44,7 +42,6 @@ public class ReservationFixture {
                                                       final ReservationTime reservationTime,
                                                       final Theme theme) {
         return new Reservation(
-                null,
                 MemberFixture.getOne(),
                 date,
                 reservationTime,
@@ -55,7 +52,6 @@ public class ReservationFixture {
     public static Reservation getOneWithTimeTheme(final ReservationTime reservationTime,
                                                   final Theme theme) {
         return new Reservation(
-                null,
                 MemberFixture.getOne(),
                 LocalDate.parse("3000-10-10"),
                 reservationTime,
@@ -66,7 +62,6 @@ public class ReservationFixture {
     public static Reservation getOneWithMemberTimeTheme(final Member member, final ReservationTime reservationTime,
                                                         final Theme theme) {
         return new Reservation(
-                null,
                 member,
                 LocalDate.parse("3000-10-10"),
                 reservationTime,
@@ -78,7 +73,6 @@ public class ReservationFixture {
         final List<Reservation> reservations = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             reservations.add(new Reservation(
-                            null,
                             MemberFixture.getOne(),
                             LocalDate.parse("3000-10-10"),
                             ReservationTimeFixture.getOne(),

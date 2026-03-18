@@ -82,7 +82,7 @@ class ReservationRepositoryTest {
         Reservation reservation3 = reservationRepository.save(
                 new Reservation(member, date.plusDays(2), reservationTime, theme));
 
-        Payment payment = paymentRepository.save(new Payment("p", "o", 10L, reservation1));
+        Payment payment = paymentRepository.save(Payment.inProgress("p", "o", 10L, reservation1));
 
         assertThat(reservationRepository.findReservationWithPaymentsByMemberId(member.getId()))
                 .containsExactlyInAnyOrder(

@@ -57,6 +57,7 @@ import roomescape.reservation.dto.response.FindReservationWithPaymentResponse;
 import roomescape.reservation.model.Reservation;
 import roomescape.reservation.model.ReservationWithPayment;
 import roomescape.reservation.repository.ReservationRepository;
+import roomescape.reservation.service.ReservationApplicationService;
 import roomescape.reservation.service.ReservationService;
 import roomescape.reservationtime.model.ReservationTime;
 import roomescape.reservationtime.repository.ReservationTimeRepository;
@@ -75,7 +76,7 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
     private final ThemeRepository themeRepository;
     private final WaitingRepository waitingRepository;
     private final OutboxRepository outboxRepository;
-    private final ReservationService reservationService;
+    private final ReservationApplicationService reservationApplicationService;
 
     @MockitoSpyBean private TossPaymentClient tossPaymentClient;
     @MockitoSpyBean private ReservationRepository reservationRepository;
@@ -86,14 +87,15 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
             final ReservationTimeRepository reservationTimeRepository,
             final ThemeRepository themeRepository,
             final WaitingRepository waitingRepository,
-            final OutboxRepository outboxRepository, ReservationService reservationService
+            final OutboxRepository outboxRepository,
+            final ReservationApplicationService reservationApplicationService
     ) {
         this.memberRepository = memberRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
         this.waitingRepository = waitingRepository;
         this.outboxRepository = outboxRepository;
-        this.reservationService = reservationService;
+        this.reservationApplicationService = reservationApplicationService;
     }
 
     @LocalServerPort
@@ -161,13 +163,14 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
         doReturn(new ConfirmPaymentResponseFromClient("paymentKey", "orderId", 100_000L))
                 .when(tossPaymentClient).confirm(any());
 
-        // Payment 저장 시 예외 발생
-        doThrow(new RuntimeException("Payment DB 저장 실패"))
+        // tx1(IN_PROGRESS 저장)은 성공, tx2(COMPLETED 전환 save)에서 예외 발생
+        doReturn(null)                                              // tx1: IN_PROGRESS 저장 성공
+                .doThrow(new RuntimeException("Payment DB 저장 실패")) // tx2: COMPLETED 전환 실패
                 .when(paymentRepository).save(any(Payment.class));
 
         // when
         assertThatThrownBy(() -> {
-            reservationService.createMyReservation(
+            reservationApplicationService.createReservation(
                     new AuthInfo(member.getId(), member.getName(), member.getRole()),
                     request
             );
@@ -175,11 +178,10 @@ class ReservationIntegrationTest extends RestDocsConfiguration {
                 .hasMessageContaining("Payment DB 저장 실패");
 
         // then
+        // tx1(Reservation + Payment(IN_PROGRESS))은 커밋됨, tx2(COMPLETED 전환) 롤백 후 outbox에 PG 취소 요청 저장
         assertAll(
                 () -> verify(tossPaymentClient).confirm(any()),
-                () -> verify(paymentRepository).save(any(Payment.class)),
-                () -> assertThat(reservationRepository.count()).isZero(),
-                () -> assertThat(paymentRepository.count()).isZero(),
+                () -> assertThat(reservationRepository.count()).isEqualTo(1L),
                 () -> assertThat(outboxRepository.count()).isEqualTo(1L)
         );
     }
