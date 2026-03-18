@@ -20,15 +20,18 @@ import roomescape.reservation.dto.response.CreateReservationResponse;
 import roomescape.reservation.dto.response.FindAvailableTimesResponse;
 import roomescape.reservation.dto.response.FindReservationResponse;
 import roomescape.reservation.dto.response.FindReservationWithPaymentResponse;
+import roomescape.reservation.service.ReservationApplicationService;
 import roomescape.reservation.service.ReservationService;
 
 @RestController
 @RequestMapping
 public class ReservationController extends ReservationControllerApi {
 
+    private final ReservationApplicationService reservationApplicationService;
     private final ReservationService reservationService;
 
-    public ReservationController(final ReservationService reservationService) {
+    public ReservationController(final ReservationApplicationService reservationApplicationService, final ReservationService reservationService) {
+        this.reservationApplicationService = reservationApplicationService;
         this.reservationService = reservationService;
     }
 
@@ -37,7 +40,7 @@ public class ReservationController extends ReservationControllerApi {
             @AuthenticationPrincipal AuthInfo authInfo,
             @Valid @RequestBody CreateMyReservationRequest createReservationRequest) {
         CreateReservationResponse createReservationResponse =
-                reservationService.createMyReservation(authInfo, createReservationRequest);
+                reservationApplicationService.createReservation(authInfo, createReservationRequest);
         return ResponseEntity.created(URI.create("/reservations/" + createReservationResponse.id()))
                 .body(createReservationResponse);
     }

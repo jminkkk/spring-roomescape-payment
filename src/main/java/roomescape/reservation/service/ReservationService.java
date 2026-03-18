@@ -4,22 +4,18 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
 import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.payment.client.dto.request.ConfirmPaymentRequest;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.request.CreateReservationByAdminRequest;
 import roomescape.reservation.dto.request.CreateReservationRequest;
 import roomescape.reservation.dto.response.CreateReservationResponse;
+
 import roomescape.reservation.dto.response.FindAdminReservationResponse;
 import roomescape.reservation.dto.response.FindAvailableTimesResponse;
 import roomescape.reservation.dto.response.FindReservationResponse;
@@ -37,8 +33,6 @@ import roomescape.waiting.service.WaitingService;
 @Service
 @Transactional
 public class ReservationService {
-
-    private final Logger log = LoggerFactory.getLogger(ReservationService.class);
 
     private final WaitingService waitingService;
     private final PaymentService paymentService;
@@ -64,13 +58,17 @@ public class ReservationService {
         this.waitingRepository = waitingRepository;
     }
 
-    public CreateReservationResponse createMyReservation(final AuthInfo authInfo, final CreateMyReservationRequest createMyReservationRequest) {
+    public Reservation createReservation(final AuthInfo authInfo, final CreateMyReservationRequest createMyReservationRequest) {
         CreateReservationRequest createReservationRequest = CreateReservationRequest.of(authInfo.getMemberId(), createMyReservationRequest);
         Reservation reservation = reservationRepository.save(convertToReservation(createReservationRequest));
-        log.error("[ ReservationService] Reservation {} ", Thread.currentThread().getId());
-        log.error("[ ReservationService] Payment {} ", TransactionSynchronizationManager.getCurrentTransactionName());
-        paymentService.createPayment(ConfirmPaymentRequest.from(createMyReservationRequest), reservation);
-        return CreateReservationResponse.from(reservation);
+        paymentService.createInProgressPayment(createMyReservationRequest, reservation);
+        return reservation;
+    }
+
+    public void cancelReservation(final Long reservationId) {
+        Reservation reservation = reservationRepository.getById(reservationId);
+        paymentService.deleteInProgressPayment(reservation);
+        reservationRepository.deleteById(reservationId);
     }
 
     public CreateReservationResponse createReservationByAdmin(final CreateReservationByAdminRequest createReservationByAdminRequest) {

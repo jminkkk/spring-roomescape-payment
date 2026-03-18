@@ -68,12 +68,7 @@ public class Reservation extends BaseEntity {
                                      final ReservationTime reservationTime,
                                      final Theme theme) {
         validateCreateTimeIsPast(date, reservationTime);
-        return new Reservation(
-                null,
-                member,
-                date,
-                reservationTime,
-                theme);
+        return new Reservation(null, member, date, reservationTime, theme);
     }
 
     private static void validateCreateTimeIsPast(final LocalDate dateToCreate, final ReservationTime reservationTime) {

@@ -23,6 +23,7 @@ import roomescape.payment.client.dto.response.ConfirmPaymentResponseFromClient;
 import roomescape.payment.model.Payment;
 import roomescape.payment.outbox.FailedPaymentRegister;
 import roomescape.payment.repository.PaymentRepository;
+import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.model.Reservation;
 
 @Service
@@ -46,17 +47,22 @@ public class PaymentService {
         this.circuitBreakerRegistry = circuitBreakerRegistry;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    public Payment createPayment(final ConfirmPaymentRequest confirmPaymentRequest, final Reservation reservation) {
+    public ConfirmPaymentResponseFromClient callPG(final ConfirmPaymentRequest confirmPaymentRequest) {
         PaymentClient paymentClient = paymentClients.get(confirmPaymentRequest.providerName());
-        ConfirmPaymentResponseFromClient confirmPaymentResponseFromClient = paymentClient.confirm(
-                confirmPaymentRequest);
-        Payment payment = confirmPaymentResponseFromClient.toPayment(reservation);
+        return paymentClient.confirm(confirmPaymentRequest);
+    }
 
-        log.error("[ PaymentService] Reservation {} ", Thread.currentThread().getId());
-        log.error("[ PaymentService] Payment {} ", TransactionSynchronizationManager.getCurrentTransactionName());
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Payment createInProgressPayment(final CreateMyReservationRequest request, final Reservation reservation) {
+        Payment payment = Payment.inProgress(request.paymentKey(), request.orderId(), request.amount(), reservation);
+        return paymentRepository.save(payment);
+    }
 
-        // 커밋 실패 시 FailedPaymentRegister에 결제 정보 저장
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Payment completePayment(final Reservation reservation) {
+        Payment payment = paymentRepository.findByReservation(reservation)
+                .orElseThrow(() -> new IllegalStateException("결제 정보를 찾을 수 없습니다. reservationId=" + reservation.getId()));
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
@@ -67,8 +73,14 @@ public class PaymentService {
             }
         });
 
-        paymentRepository.save(payment);
-        return payment;
+        payment.complete();
+        return paymentRepository.save(payment);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteInProgressPayment(final Reservation reservation) {
+        paymentRepository.findByReservation(reservation)
+                .ifPresent(paymentRepository::delete);
     }
 
     public Map<PaymentClientType, PaymentClientStatus> getPaymentClientStatuses() {
