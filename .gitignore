@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+### AI Agent ###
+AGENT_LOG.md
+AGENTS.md
