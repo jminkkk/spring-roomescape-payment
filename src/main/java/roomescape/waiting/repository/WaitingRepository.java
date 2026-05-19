@@ -17,10 +17,10 @@ public interface WaitingRepository extends JpaRepository<Waiting, Long> {
                 () -> new NoSuchElementException("식별자 " + id + "에 해당하는 예약 대기가 존재하지 않습니다."));
     }
 
-    Optional<Waiting> findFirstByReservation(Reservation reservation);
+    Optional<Waiting> findFirstByReservationOrderByIdAsc(Reservation reservation);
 
     default Waiting getFirstByReservation(Reservation reservation) {
-        return findFirstByReservation(reservation)
+        return findFirstByReservationOrderByIdAsc(reservation)
                 .orElseThrow(() -> new NoSuchElementException(reservation + "에 해당하는 예약 대기가 존재하지 않습니다."));
     }
 
