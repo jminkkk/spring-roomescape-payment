@@ -73,16 +73,17 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
     @Test
     void createReservationWaiting() {
         LocalDate date = LocalDate.parse("2026-11-30");
-        Member member = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
+        Member reservationOwner = memberRepository.save(MemberFixture.getOne("owner@navv.com"));
+        Member waitingMember = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
-        reservationRepository.save(new Reservation(member, date, reservationTime, theme));
+        reservationRepository.save(new Reservation(reservationOwner, date, reservationTime, theme));
 
         CreateWaitingRequest createWaitingRequest = new CreateWaitingRequest(date, 1L, 1L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
-                .cookie("token", getTokenByLogin(member))
+                .cookie("token", getTokenByLogin(waitingMember))
                 .body(createWaitingRequest)
                 .when().post("/waitings")
                 .then().log().all()
@@ -90,7 +91,7 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
                 .statusCode(201)
                 .body("waitingId", equalTo(1))
                 .body("reservationId", equalTo(1))
-                .body("memberId", equalTo(1));
+                .body("memberId", equalTo(2));
     }
 
     @DisplayName("방탈출 예약 대기 실패: 예약 없음")
@@ -117,24 +118,25 @@ class WaitingIntegrationTest extends RestDocsConfiguration {
     @DisplayName("방탈출 예약 대기 실패: 중복 대기")
     @Test
     void createReservationWaiting_WhenMemberNotExistsReservationsAndMember() {
-        Member member = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
+        Member reservationOwner = memberRepository.save(MemberFixture.getOne("owner@navv.com"));
+        Member waitingMember = memberRepository.save(MemberFixture.getOne("asdf12@navv.com"));
         ReservationTime reservationTime = reservationTimeRepository.save(new ReservationTime(LocalTime.parse("20:00")));
         Theme theme = themeRepository.save(new Theme("테마이름", "설명", "썸네일"));
         Reservation reservation = reservationRepository.save(
-                new Reservation(member, LocalDate.parse("2026-11-30"), reservationTime, theme));
+                new Reservation(reservationOwner, LocalDate.parse("2026-11-30"), reservationTime, theme));
 
-        waitingRepository.save(new Waiting(reservation, member));
+        waitingRepository.save(new Waiting(reservation, waitingMember));
         CreateWaitingRequest createWaitingRequest = new CreateWaitingRequest(reservation.getDate(), 1L, 1L);
 
         RestAssured.given(this.spec).log().all()
                 .contentType(ContentType.JSON)
-                .cookie("token", getTokenByLogin(member))
+                .cookie("token", getTokenByLogin(waitingMember))
                 .body(createWaitingRequest)
                 .when().post("/waitings")
                 .then().log().all()
 
                 .statusCode(400)
-                .body("detail", equalTo("memberId: 1 회원이 reservationId: 1인 예약에 대해 이미 대기를 신청했습니다."));
+                .body("detail", equalTo("memberId: 2 회원이 reservationId: 1인 예약에 대해 이미 대기를 신청했습니다."));
     }
 
     @DisplayName("예약 대기 정보 목록 조회")

@@ -65,12 +65,13 @@ class WaitingRepositoryTest {
     void findWaitingsWithRankByMemberId() {
         // given
         Member member = memberRepository.save(MemberFixture.getOne());
+        Member otherMember = memberRepository.save(MemberFixture.getOne("other@email.com"));
         ReservationTime reservationTime = reservationTimeRepository.save(ReservationTimeFixture.getOne());
         Theme theme = themeRepository.save(ThemeFixture.getOne());
-        Reservation reservation = reservationRepository.save(
-                ReservationFixture.getOneWithMemberTimeTheme(member, reservationTime, theme));
-        Waiting waiting1 = waitingRepository.save(new Waiting(reservation, member));
-        Waiting waiting2 = waitingRepository.save(new Waiting(reservation, member));
+        Reservation reservation1 = reservationRepository.save(ReservationFixture.getOneWithMemberTimeTheme(otherMember, reservationTime, theme));
+        Reservation reservation2 = reservationRepository.save(new Reservation(otherMember, LocalDate.parse("2099-05-11"), reservationTime, theme));
+        Waiting waiting1 = waitingRepository.save(new Waiting(reservation1, member));
+        Waiting waiting2 = waitingRepository.save(new Waiting(reservation2, member));
 
         // when
         List<WaitingWithRanking> waitingsWithRankByMember = waitingRepository.findWaitingsWithRankByMember(member);
@@ -79,7 +80,7 @@ class WaitingRepositoryTest {
         assertThat(waitingsWithRankByMember.get(0).waiting()).isEqualTo(waiting1);
         assertThat(waitingsWithRankByMember.get(0).ranking()).isZero();
         assertThat(waitingsWithRankByMember.get(1).waiting()).isEqualTo(waiting2);
-        assertThat(waitingsWithRankByMember.get(1).ranking()).isEqualTo(1);
+        assertThat(waitingsWithRankByMember.get(1).ranking()).isZero();
     }
 
     @Test
