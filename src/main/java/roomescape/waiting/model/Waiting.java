@@ -8,11 +8,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import roomescape.common.model.BaseEntity;
 import roomescape.member.domain.Member;
 import roomescape.reservation.model.Reservation;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "reservation_id"}))
 public class Waiting extends BaseEntity {
 
     @Id

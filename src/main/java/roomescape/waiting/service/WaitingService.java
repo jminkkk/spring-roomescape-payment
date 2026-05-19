@@ -2,6 +2,7 @@ package roomescape.waiting.service;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.member.domain.Member;
@@ -16,6 +17,7 @@ import roomescape.waiting.model.Waiting;
 import roomescape.waiting.repository.WaitingRepository;
 
 @Service
+@Transactional(readOnly = true)
 public class WaitingService {
 
     private final WaitingRepository waitingRepository;
@@ -29,14 +31,22 @@ public class WaitingService {
         this.memberRepository = memberRepository;
     }
 
+    @Transactional
     public CreateWaitingResponse createWaiting(final AuthInfo authInfo,
                                                final CreateWaitingRequest createWaitingRequest) {
         Reservation reservation = reservationRepository.getByDateAndReservationTimeIdAndThemeId(
                 createWaitingRequest.date(), createWaitingRequest.timeId(), createWaitingRequest.themeId());
         Member member = memberRepository.getById(authInfo.getMemberId());
 
+        checkReservationOwner(reservation, member);
         checkAlreadyExistsWaiting(authInfo.getMemberId(), reservation.getId());
         return CreateWaitingResponse.of(waitingRepository.save(new Waiting(reservation, member)));
+    }
+
+    private void checkReservationOwner(Reservation reservation, Member member) {
+        if (reservation.isOwnedBy(member)) {
+            throw new IllegalArgumentException("본인이 예약한 건에 대해서는 대기를 등록할 수 없습니다.");
+        }
     }
 
     private void checkAlreadyExistsWaiting(Long memberId, Long reservationId) {
@@ -61,15 +71,23 @@ public class WaitingService {
                 .toList();
     }
 
+    @Transactional
     public void deleteWaitingForReservationUpgrade(final Long waitingId) {
         Waiting waiting = waitingRepository.getById(waitingId);
         waitingRepository.delete(waiting);
     }
 
+    @Transactional
     public void deleteWaiting(final AuthInfo authInfo, final Long waitingId) {
         Waiting waiting = waitingRepository.getById(waitingId);
 
         checkMemberAuthentication(waiting, authInfo.getMemberId());
+        waitingRepository.delete(waiting);
+    }
+
+    @Transactional
+    public void rejectWaiting(final Long waitingId) {
+        Waiting waiting = waitingRepository.getById(waitingId);
         waitingRepository.delete(waiting);
     }
 
