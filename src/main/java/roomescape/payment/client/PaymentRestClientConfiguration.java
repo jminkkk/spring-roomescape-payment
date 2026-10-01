@@ -69,13 +69,14 @@ public class PaymentRestClientConfiguration {
     }
 
     public HttpClient httpClient() {
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = connectionManager();
         return HttpClients.custom()
-                .setDefaultRequestConfig(requestConfig())
-                .setConnectionManager(connectionManager())
-                .setBackoffManager(new AIMDBackoffManager(connectionManager()))
+                .setDefaultRequestConfig(requestConfig()) // 1초로 했을 때 44% 1분
+                .setConnectionManager(poolingHttpClientConnectionManager)
+
+                // 하위 설정들 단시간 테스트에서는 큰 의미 X
+                .setBackoffManager(new AIMDBackoffManager(poolingHttpClientConnectionManager))
                 .setRetryStrategy(IdempotencyKeyRetryStrategy.INSTANCE)
-                .setConnectionReuseStrategy(DefaultConnectionReuseStrategy.INSTANCE)
-                .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
                 .evictExpiredConnections()
                 .evictIdleConnections(TimeValue.ofSeconds(30))
                 .build();
@@ -84,7 +85,9 @@ public class PaymentRestClientConfiguration {
     // 요청별로 적용되며 요청 생명주기에 대한 타임아웃을 정의
     private RequestConfig requestConfig() {
         return RequestConfig.custom()
-                .setConnectionRequestTimeout(Timeout.ofSeconds(1))
+                // 1s -> 44%, 10s -> 4%, 5s -> 에러율 0% + 최고 성공 TPS
+                .setConnectionRequestTimeout(Timeout.ofSeconds(5))
+                // toss payments 권장 시간 60초 -> 설정 전후 테스트 결과 유의미하지 않음
                 .setResponseTimeout(Timeout.ofMinutes(1))
                 .build();
     }
@@ -93,7 +96,9 @@ public class PaymentRestClientConfiguration {
     private PoolingHttpClientConnectionManager connectionManager() {
         return PoolingHttpClientConnectionManagerBuilder.create()
                 .setMaxConnTotal(200)
-                .setMaxConnPerRoute(50)
+                .setMaxConnPerRoute(100) // 얘가 거의 핵심
+
+                // 하위 설정 큰 의미 X
                 .setConnPoolPolicy(PoolReusePolicy.LIFO)
                 .setPoolConcurrencyPolicy(PoolConcurrencyPolicy.STRICT)
                 .setDefaultConnectionConfig(connectionConfig())
