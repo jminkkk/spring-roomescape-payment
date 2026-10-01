@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.notification.WaitingPromotionEvent;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
 import roomescape.reservation.dto.request.CreateReservationByAdminRequest;
@@ -43,7 +41,6 @@ public class ReservationService {
 
     private final WaitingService waitingService;
     private final PaymentService paymentService;
-    private final ApplicationEventPublisher eventPublisher;
 
     private final ReservationRepository reservationRepository;
     private final ReservationTimeRepository reservationTimeRepository;
@@ -52,7 +49,6 @@ public class ReservationService {
     private final WaitingRepository waitingRepository;
 
     public ReservationService(final WaitingService waitingService, PaymentService paymentService,
-                              final ApplicationEventPublisher eventPublisher,
                               final ReservationRepository reservationRepository,
                               final ReservationTimeRepository reservationTimeRepository,
                               final ThemeRepository themeRepository,
@@ -60,7 +56,6 @@ public class ReservationService {
                               final WaitingRepository waitingRepository) {
         this.waitingService = waitingService;
         this.paymentService = paymentService;
-        this.eventPublisher = eventPublisher;
         this.reservationRepository = reservationRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
@@ -171,6 +166,5 @@ public class ReservationService {
         reservation.updateMember(waiting.getMember());
         waitingService.deleteWaitingForReservationUpgrade(waiting.getId());
         log.info("예약 {}이 대기 {}에 의해 승격되었습니다.", reservation.getId(), waiting.getId());
-        eventPublisher.publishEvent(WaitingPromotionEvent.from(reservation));
     }
 }
