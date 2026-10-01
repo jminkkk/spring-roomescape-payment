@@ -4,16 +4,16 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import roomescape.auth.domain.AuthInfo;
 import roomescape.common.exception.ForbiddenException;
-import roomescape.common.outbox.FailedEventRegister;
 import roomescape.member.domain.Member;
 import roomescape.member.repository.MemberRepository;
-import roomescape.notification.NotificationService;
 import roomescape.notification.WaitingPromotionEvent;
 import roomescape.payment.service.PaymentService;
 import roomescape.reservation.dto.request.CreateMyReservationRequest;
@@ -43,8 +43,7 @@ public class ReservationService {
 
     private final WaitingService waitingService;
     private final PaymentService paymentService;
-    private final NotificationService notificationService;
-    private final FailedEventRegister failedEventRegister;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final ReservationRepository reservationRepository;
     private final ReservationTimeRepository reservationTimeRepository;
@@ -53,8 +52,7 @@ public class ReservationService {
     private final WaitingRepository waitingRepository;
 
     public ReservationService(final WaitingService waitingService, PaymentService paymentService,
-                              final NotificationService notificationService,
-                              final FailedEventRegister failedEventRegister,
+                              final ApplicationEventPublisher eventPublisher,
                               final ReservationRepository reservationRepository,
                               final ReservationTimeRepository reservationTimeRepository,
                               final ThemeRepository themeRepository,
@@ -62,8 +60,7 @@ public class ReservationService {
                               final WaitingRepository waitingRepository) {
         this.waitingService = waitingService;
         this.paymentService = paymentService;
-        this.notificationService = notificationService;
-        this.failedEventRegister = failedEventRegister;
+        this.eventPublisher = eventPublisher;
         this.reservationRepository = reservationRepository;
         this.reservationTimeRepository = reservationTimeRepository;
         this.themeRepository = themeRepository;
@@ -155,7 +152,7 @@ public class ReservationService {
         checkCancelAuthorization(reservation, authInfo.getMemberId());
 
         if (waitingRepository.existsByReservation(reservation)) {
-            updateReservationByMember(reservation);
+            updateReservationByWaitingMember(reservation);
             return;
         }
         reservationRepository.deleteById(id);
@@ -169,20 +166,11 @@ public class ReservationService {
         }
     }
 
-    private void updateReservationByMember(final Reservation reservation) {
+    private void updateReservationByWaitingMember(final Reservation reservation) {
         Waiting waiting = waitingRepository.getFirstByReservation(reservation);
         reservation.updateMember(waiting.getMember());
         waitingService.deleteWaitingForReservationUpgrade(waiting.getId());
-        sendPromotionNotification(reservation);
-    }
-
-    private void sendPromotionNotification(final Reservation reservation) {
-        WaitingPromotionEvent event = WaitingPromotionEvent.from(reservation);
-        try {
-            notificationService.sendPromotionNotification(event);
-        } catch (Exception e) {
-            log.warn("승격 알림 발송 실패, Outbox에 저장합니다. reservationId={}", reservation.getId(), e);
-            failedEventRegister.register(event);
-        }
+        log.info("예약 {}이 대기 {}에 의해 승격되었습니다.", reservation.getId(), waiting.getId());
+        eventPublisher.publishEvent(WaitingPromotionEvent.from(reservation));
     }
 }
