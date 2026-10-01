@@ -1,0 +1,18 @@
+# [비교군 C] LAX 동시성 - STRICT와 비교
+# 실행: ./gradlew bootRun --args='--spring.profiles.active=perf,perf-lenient'
+#
+# 측정 목적: LAX는 먼저 잡는 스레드가 커넥션 획득 → throughput은 높지만 p99가 튀는지 확인
+#            STRICT(현재 설정)는 대기 큐 공정 관리 → p99가 안정적인 대신 평균 latency는 높을 수 있음
+#            측정: 동일 부하에서 p95/p99 및 표준편차 비교
+
+payment:
+  pool:
+    enabled: true
+    reusePolicy: LIFO
+    concurrencyPolicy: LAX
+    maxConnTotal: 200
+    maxConnPerRoute: 50
+    ttlSeconds: 60
+    validateAfterInactivitySeconds: 60
+    aimdBackoff: false
+    retryEnabled: false

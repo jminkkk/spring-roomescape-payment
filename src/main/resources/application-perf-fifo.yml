@@ -1,0 +1,18 @@
+# [비교군 B] FIFO 정책 - LIFO와 비교
+# 실행: ./gradlew bootRun --args='--spring.profiles.active=perf,perf-fifo'
+#
+# 측정 목적: FIFO는 오래된 커넥션을 먼저 사용 → TLS session 만료 가능성 높음
+#            LIFO(현재 설정) 대비 full TLS handshake 발생 빈도가 높은지 확인
+#            측정: 앱 로그에서 "TLS handshake" 또는 "SSL_connect" 카운트 비교
+
+payment:
+  pool:
+    enabled: true
+    reusePolicy: FIFO
+    concurrencyPolicy: STRICT
+    maxConnTotal: 200
+    maxConnPerRoute: 50
+    ttlSeconds: 60
+    validateAfterInactivitySeconds: 60
+    aimdBackoff: false
+    retryEnabled: false

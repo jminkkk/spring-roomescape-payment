@@ -40,3 +40,11 @@ out/
 ### AI Agent ###
 AGENT_LOG.md
 AGENTS.md
+.claude/
+CLAUDE.md
+
+### Misc ###
+org/
+package.json
+package-lock.json
+.DS_Store

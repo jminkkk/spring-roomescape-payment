@@ -1,0 +1,14 @@
+# [Baseline 1] SimpleClientHttpRequestFactory — 명시적 풀 없음
+# 실행: ./gradlew bootRun --args='--spring.profiles.active=perf,perf-no-pool'
+#
+# 동작 특성:
+#   - Java HttpURLConnection 기반 (Apache HttpClient 아님)
+#   - OS-level TCP keep-alive로 커넥션을 재사용할 수 있음 (= 완전한 new connection은 아님)
+#   - 단, 명시적인 풀 관리(LIFO/FIFO, maxConnPerRoute, AIMD 등)가 없음
+#   - 멀티스레드 환경에서 커넥션 경합이 발생해도 조율 메커니즘이 없음
+#
+# 비교 목적: "풀 관리가 없는 상태"의 latency/error 기준선 확보
+
+payment:
+  pool:
+    enabled: false

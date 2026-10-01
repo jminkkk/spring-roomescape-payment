@@ -49,7 +49,7 @@ INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES 
 INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES (5, 2, current_timestamp, current_timestamp);
 INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES (1, 3, current_timestamp, current_timestamp);
 INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES (2, 3, current_timestamp, current_timestamp);
-INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES (2, 3, current_timestamp, current_timestamp);
+INSERT INTO waiting (reservation_id, member_id, created_at, modified_at) VALUES (3, 3, current_timestamp, current_timestamp);
 
 INSERT INTO payment (payment_key, order_id, amount, reservation_id, status, created_at, modified_at) VALUES ('방탈출 결제 키', '방탈출 결제', 30000, 1, 'COMPLETED', current_timestamp, current_timestamp);
 INSERT INTO payment (payment_key, order_id, amount, reservation_id, status, created_at, modified_at) VALUES ('방탈출 결제 키', '방탈출 결제', 10000, 2, 'COMPLETED', current_timestamp, current_timestamp);

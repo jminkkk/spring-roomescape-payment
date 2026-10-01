@@ -1,0 +1,31 @@
+# [공통] 성능 테스트 기반 프로파일
+# 모든 perf-* 프로파일은 이 설정을 기본으로 상속받는다
+# 실행: ./gradlew bootRun --args='--spring.profiles.active=perf,perf-no-pool'
+
+payment:
+  baseUrl: https://httpbin.org
+  confirmPath: /delay/0.2   # 200ms delay (루프백 통신, TLS/네트워크 비용 미포함)
+  pool:
+    retryEnabled: false   # perf 테스트: 재시도 끔 (1s 대기로 latency 부풀기 방지)
+
+spring:
+  cache:
+    type: simple
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+# 서킷 브레이커 비활성화 (perf 테스트 결과 오염 방지)
+# 풀 고갈 테스트에서 CB가 먼저 OPEN되면 AIMD/pool 동작을 관찰할 수 없음
+resilience4j:
+  circuitbreaker:
+    instances:
+      toss-payment:
+        minimumNumberOfCalls: 100000
+        failureRateThreshold: 100
+
+logging:
+  level:
+    # TLS handshake 횟수 확인용 (LIFO vs FIFO 비교 시 사용)
+    # JVM 옵션으로도 가능: -Djavax.net.debug=ssl:handshake
+    org.apache.hc.client5.http.impl.io: DEBUG
+    org.apache.hc.client5.http.impl.conn: DEBUG

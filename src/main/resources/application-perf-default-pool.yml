@@ -1,0 +1,22 @@
+# [Baseline 2] Apache HttpClient + 모든 최적화 옵션 OFF
+# 실행: ./gradlew bootRun --args='--spring.profiles.active=perf,perf-default-pool'
+#
+# 동작 특성:
+#   - Apache HttpClient + PoolingHttpClientConnectionManager 사용 (풀링은 작동)
+#   - 커스텀 최적화 설정 없음: FIFO, LAX, TTL 없음, ValidateAfterInactivity 없음, AIMD 없음
+#   - pool 크기는 current와 동일하게 유지 (pool 크기가 변수가 되지 않도록)
+#
+# 비교 목적: "풀링은 있되 최적화 없음" vs "풀링 + 최적화(LIFO/STRICT/AIMD/TTL)"
+#            각 최적화 설정이 실제로 기여하는지 분리해서 확인
+
+payment:
+  pool:
+    enabled: true
+    maxConnTotal: 200
+    maxConnPerRoute: 50
+    reusePolicy: FIFO      # 최적화 없음: 오래된 커넥션부터 재사용
+    concurrencyPolicy: LAX      # 최적화 없음: 먼저 잡는 스레드 우선
+    ttlSeconds: 0          # 0 = TTL 미설정 (무한)
+    validateAfterInactivitySeconds: 0  # 0 = 유효성 검사 미설정
+    aimdBackoff: false
+    retryEnabled: false
