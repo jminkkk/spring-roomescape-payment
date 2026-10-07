@@ -65,3 +65,51 @@ Phase 2, 3의 몫이다. 여기서는 "연결이 되는가"만 확인한다.
 
 - 실제 Producer 구현 → Phase 2 (여기서는 토픽 선언까지만)
 - Consumer, `DefaultErrorHandler`/`DeadLetterPublishingRecoverer` 설정 → Phase 3
+
+---
+
+## Phase 1 결과 (2026-10-07 완료)
+
+완료 기준 전부 확인. `kafka-topics --describe`로 원본·DLT `PartitionCount: 1`, DLT `retention.ms=2592000000`,
+브로커 `auto.create.topics.enable=false`. 스모크 테스트 2회 연속 통과.
+
+### Phase 2·3 세션이 알아야 할 산출물
+
+| 무엇 | 위치 / 사용법 |
+|---|---|
+| 원본 토픽명 | `roomescape.payment.event.PaymentEventTopicConfiguration.PAYMENT_PERSIST_FAILED` (+ `NewTopic` 빈) |
+| DLT 토픽명 | `roomescape.payment.recovery.PaymentRecoveryTopicConfiguration.PAYMENT_PERSIST_FAILED_DLT` (+ `NewTopic` 빈, retention 30일) |
+| 토픽명 하드코딩 금지 | 위 상수를 static import해서 쓸 것. 의존 방향은 `recovery → event`만 |
+| 통합 테스트 하네스 | `roomescape.util.KafkaIntegrationTest` |
+| 하네스 사용 예시 | `src/test/java/roomescape/payment/recovery/KafkaSmokeTest.java` |
+
+### 하네스 동작 방식 (문서 원안과 다른 점)
+
+- **토픽은 `@EmbeddedKafka(topics=...)`가 아니라 앱의 `@Bean NewTopic`이 만든다.** 테스트가 실제 선언
+  (파티션 수·retention)을 그대로 쓰게 하려는 것이다. 그래서 `@EmbeddedKafka`에는 `topics`·`partitions`가 없다.
+- 🔴 그 결과 **`EmbeddedKafkaBroker.consumeFromAnEmbeddedTopic()`을 쓸 수 없다**
+  ("not in embedded topic list" 예외). 테스트 컨슈머는 `consumer.subscribe(List.of(토픽))`으로 구독한다.
+  test 프로필이 `auto-offset-reset=earliest`라 구독 타이밍 경합은 없다. 컨슈머 그룹은 테스트마다 고유하게 줄 것.
+- 임베디드 브로커도 `auto.create.topics.enable=false`. **선언 안 한 토픽명은 테스트에서도 에러**가 나야 한다.
+- test 프로필 기본값은 `spring.kafka.admin.auto-create=false`(Kafka 없는 `@IntegrationTest`가 `localhost:9092`
+  접속을 시도하며 지연되는 것을 막음). `@KafkaIntegrationTest`만 `@TestPropertySource`로 다시 켠다.
+- 임베디드 브로커는 Zookeeper 모드로 뜬다(spring-kafka-test 3.3.6 기본값). 동작에는 문제없다.
+
+### 🔴 다음 Phase 주의: 전역 직렬화 설정이 스모크 테스트를 깰 수 있다
+
+`KafkaSmokeTest`는 Boot 기본값(String serializer/deserializer)에 기대 UUID 문자열을 주고받는다.
+- Phase 2에서 `spring.kafka.producer.value-serializer`를 `JsonSerializer`로 **전역** 설정하면
+  문자열이 `"\"uuid\""`로 직렬화되어 스모크 테스트가 깨진다.
+- Phase 3에서 컨슈머 역직렬화를 `ErrorHandlingDeserializer` + `PaymentPersistFailed` 기본 타입으로 바꾸면
+  UUID 문자열을 역직렬화하지 못한다.
+- 스모크 테스트는 **지우지 말 것**(하네스 동작 증거). 직렬화 설정을 바꿀 때 스모크 테스트가 String 직렬화를
+  명시적으로 쓰도록 같이 고친다.
+
+### 다음 트랙 메모 (Kafka 전환 범위 밖)
+
+- 원본·DLT 파티션 수 일치 규칙이 주석에만 있다. 파티션을 늘릴 일이 생기면 상수 공유로 코드화.
+  (정확히는 "DLT ≥ 원본". 기본 destination resolver가 `new TopicPartition(topic + ".DLT", record.partition())`)
+- Kafka 없이 `bootRun`(perf 프로필 포함)하면 KafkaAdmin 접속 시도로 기동이 늦어질 수 있다 (미확인).
+- 임베디드 브로커 Zookeeper 모드 → spring-kafka 4 업그레이드 시 KRaft(`@EmbeddedKafka(kraft = true)`) 검토.
+- `docker-compose.yml`의 `KAFKA_TRANSACTION_STATE_LOG_*` 2줄은 Kafka 트랜잭션 미사용이라 불필요할 가능성 (미확인).
+- `ReservationIntegrationTest`의 "결제 성공, DB 롤백 시 Outbox 이벤트 생성" 테스트는 기존부터 실패 → Phase 4에서 삭제.

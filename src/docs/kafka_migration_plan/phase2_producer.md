@@ -8,6 +8,10 @@
 Phase 1 완료 — Kafka가 로컬에서 기동되고, `payment.persist.failed`/`.DLT` 토픽이 선언돼 있고
 Spring Boot에서 `KafkaTemplate`을 쓸 수 있는 상태.
 
+**`phase1_kafka_infra.md` 하단 "Phase 1 결과"를 먼저 읽을 것.** 토픽명 상수 위치, 하네스 사용법
+(`consumeFromAnEmbeddedTopic` 사용 불가), 그리고 🔴 **전역 직렬화 설정을 바꾸면 `KafkaSmokeTest`가 깨진다**는
+주의가 있다.
+
 ## 목표
 
 결제 승인(tx3) 롤백 시 Outbox 테이블에 기록하던 것을, Kafka `payment.persist.failed` 토픽에
